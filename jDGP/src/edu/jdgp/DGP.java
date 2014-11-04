@@ -187,6 +187,15 @@ public class DGP extends DGP_h
   public static void main(String[] args) {
 	  try {
 		Partition p = new Partition(10);
+		p.dump();
+		p.join(1,2);
+		p.dump();
+		p.join(3,4);
+		p.dump();
+		p.join(2,5);
+		p.dump();
+		p.join(2,4);
+		p.dump();
 	} catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
@@ -206,6 +215,7 @@ public class DGP extends DGP_h
 	  private VecInt[] _parts;
 	  private int _numElems;
 	  private int _numParts;
+	  private VecInt _emptyParts;
 	  
 	  public Partition(int n) throws Exception {
 		  reset(n);
@@ -216,9 +226,10 @@ public class DGP extends DGP_h
 		_numParts = n;
 		_elems = new int[n];
 		_parts = new VecInt[n];
+		_emptyParts = new VecInt(n / 10);
 		for (int i = 0; i < _elems.length; i++) {
 			_elems[i] = i;
-			_parts[i] = new VecInt(1);
+			_parts[i] = new VecInt(1);			
 			_parts[i].pushBack(i);
 		}
 	}
@@ -239,8 +250,18 @@ public class DGP extends DGP_h
 	}
 
 	public int join(int i, int j) {
-		// TODO Auto-generated method stub
-		return 0;
+		// copio el vector de menor tamanio en el de mayor tamanio
+		int source = getSize(i) <= getSize(j) ? i : j;
+		int target = (source == i) ? j : i;
+		int srcSize = _parts[source].size();
+		for (int k = 0; k < srcSize; k++) {
+			int elem = _parts[source].get(k);
+			_parts[target].pushBack(elem); // agregar los elems en la nueva particion
+			_elems[elem] = target; // setear la nueva particion del los elems
+		}
+		_parts[source] = new VecInt(1);
+		_emptyParts.pushBack(source);
+		return target;
 	}
 
 	public int getSize(int i) {
@@ -250,17 +271,49 @@ public class DGP extends DGP_h
 			return 0;
 	}
 
+	public void dump(){
+		StringBuffer sb = new StringBuffer();
+		sb.append("elems: "); 
+		for (int i = 0; i < _elems.length; i++) {
+			sb.append(" " + i + " = " + _elems[i] + " ");
+		}
+		System.out.println(sb);
+		
+		for (int i = 0; i < _parts.length; i++) {
+			sb = new StringBuffer();
+			sb.append("part: " + i);
+			for (int j = 0; j < _parts[i].size(); j++) {
+				sb.append(" " + _parts[i].get(j));
+			}
+			System.out.println(sb);				
+		}
+		
+		sb = new StringBuffer();
+		sb.append("emptyParts: ");
+		for (int i = 0; i < _emptyParts.size(); i++) {
+			sb.append(" " + _emptyParts.get(i));
+		}
+		System.out.println(sb);
+	}
   }
 
-/*
   //////////////////////////////////////////////////////////////////////
   public class SplittablePartition
     extends Partition implements SplittablePartition_h
   {
 
-    // ASSIGNMENT 1
+	  public SplittablePartition(int n) throws Exception {
+		  super(n);
+	  }
+	  
+	public void split(int i) {
+		// TODO Auto-generated method stub
+		
+	}
 
   }
+
+/*
 
   //////////////////////////////////////////////////////////////////////
   public static class Faces implements Faces_h
