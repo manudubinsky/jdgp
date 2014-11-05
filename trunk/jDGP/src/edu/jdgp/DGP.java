@@ -87,6 +87,13 @@ public class DGP extends DGP_h
 
 	public void swap(VecInt_h other) throws Exception {
 	}
+	
+	public void dump() {
+		for (int i = 0; i < _vecLen; i++) {
+			System.out.print(" " + _vec[i]);
+		}
+		System.out.println();
+	}
   }
 
 /*
@@ -184,6 +191,7 @@ public class DGP extends DGP_h
   }
 
   //////////////////////////////////////////////////////////////////////
+/*
   public static void main(String[] args) {
 	  try {
 		Partition p = new Partition(10);
@@ -201,6 +209,7 @@ public class DGP extends DGP_h
 		e.printStackTrace();
 	}
   }
+*/
 
   public static class Partition implements Partition_h
   { /*
@@ -313,16 +322,123 @@ public class DGP extends DGP_h
 
   }
 
-/*
+
 
   //////////////////////////////////////////////////////////////////////
+  public static void main(String[] args) {
+/*	  
+      0 1 2 -1 # F0
+      3 1 0  3 -1 # F1
+      2 1 3 -1 # F2
+      2 3 0 -1 # F3
+*/
+	  VecInt coordIndex = new VecInt(20);
+	  coordIndex.pushBack(0);
+	  coordIndex.pushBack(1);
+	  coordIndex.pushBack(2);
+	  coordIndex.pushBack(-1);
+	  coordIndex.pushBack(3);
+	  coordIndex.pushBack(1);
+	  coordIndex.pushBack(0);
+	  coordIndex.pushBack(3);
+	  coordIndex.pushBack(-1);
+	  coordIndex.pushBack(2);
+	  coordIndex.pushBack(1);
+	  coordIndex.pushBack(3);
+	  coordIndex.pushBack(-1);
+	  coordIndex.pushBack(2);
+	  coordIndex.pushBack(3);
+	  coordIndex.pushBack(0);
+	  coordIndex.pushBack(-1);
+
+	  try {
+		Faces f = new Faces(3, coordIndex);
+		System.out.println("vertices: " + f.getNumberOfVertices());
+		System.out.println("faces: " + f.getNumberOfFaces());
+		System.out.println("faces: " + f.getNumberOfCorners());
+		System.out.println("face 2 size: " + f.getFaceSize(2));
+		System.out.println("face 2 #corners: " + f.getNumberOfCorners(2));
+		System.out.println("face 3 vertex 3: " + f.getFaceVertex(4, 1));
+	  } catch (Exception e) {
+		e.printStackTrace();
+	  }
+  }
+
   public static class Faces implements Faces_h
   {
+	  private int _numVertices;
+	  private VecInt _coordIndex;
+	  private VecInt _facesIndex;
+	  
+	// throws exception if(nV<0), if(coordIndex==null),
+	// and if an element iV of coordIndex is iV<-1 or iV>=nV
+	public Faces(int nV, VecInt coordIndex) throws Exception {
+		if (nV < 0)
+			throw new Exception("nV < 0");
+		if (coordIndex == null)
+			throw new Exception("coordIndex == null");
+		
+		_numVertices = nV;
+		_coordIndex = coordIndex;
+		_facesIndex = new VecInt(128);
+				
+		int coordSize = _coordIndex.size();
+		int idx = 0;
+		while (idx < coordSize) {
+			int coordValue = _coordIndex.get(idx);
+			while (coordValue != -1) {				
+				if (coordValue < -1 || coordValue > _numVertices)
+					throw new Exception("coordIndex[" + idx + "] = " + coordValue + " out of range");
+				coordValue = _coordIndex.get(++idx);
+			}
+			_facesIndex.pushBack(idx);
+			idx++;
+		}
+	}
+	
+	public int getNumberOfVertices() {
+		return _numVertices;
+	}
 
-    // ASSIGNMENT 1
+	public int getNumberOfFaces() {
+		return _facesIndex.size();
+	}
+
+	public int getNumberOfCorners() { // including the -1's
+		return _coordIndex.size();
+	}
+	
+	public int getNumberOfCorners(int iF) {
+		int beginIdx = iF == 1 ? 0 : (_facesIndex.get(iF - 2) + 1);
+		int endIdx = _facesIndex.get(iF - 1);
+		int size = endIdx - beginIdx;
+		return size;
+	}
+
+	public int getFaceSize(int iF) throws Exception {
+		if (iF > getNumberOfFaces())
+			throw new Exception("Invalid face number");
+		return getNumberOfCorners(iF);
+	}
+
+	public int getFaceFirstCorner(int iF) throws Exception {
+		return getFaceVertex(iF, 1);
+	}
+
+	public int getFaceVertex(int iF, int j) throws Exception {
+		if (iF > getNumberOfFaces())
+			throw new Exception("Invalid face number");
+
+		if (getNumberOfCorners(iF) < j)
+			throw new Exception("Invalid face size");
+		
+		int beginIdx = iF == 1 ? 0 : (_facesIndex.get(iF - 2) + 1);		
+		return beginIdx + j - 1;
+	}
 
   }
 
+/*
   //////////////////////////////////////////////////////////////////////
   public static class Graph implements Graph_h
   {
