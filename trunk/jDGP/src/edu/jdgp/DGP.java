@@ -438,15 +438,50 @@ public class DGP extends DGP_h
 
   }
 
-/*
+
   //////////////////////////////////////////////////////////////////////
   public static class Graph implements Graph_h
   {
 
-    // ASSIGNMENT 1
+	public void erase() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public int getNumberOfVertices() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public int getNumberOfEdges() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public int getEdge(int iV0, int iV1) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public int insertEdge(int iV0, int iV1) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public int getVertex0(int iE) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public int getVertex1(int iE) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 
   }
-    
+
+/*    
   //////////////////////////////////////////////////////////////////////
   public static class PolygonMesh
     extends Faces implements PolygonMesh_h
