@@ -325,13 +325,14 @@ public class DGP extends DGP_h
 
 
   //////////////////////////////////////////////////////////////////////
-  public static void main(String[] args) {
-/*	  
-      0 1 2 -1 # F0
-      3 1 0  3 -1 # F1
-      2 1 3 -1 # F2
-      2 3 0 -1 # F3
+  /*	  
+  0 1 2 -1 # F0
+  3 1 0  3 -1 # F1
+  2 1 3 -1 # F2
+  2 3 0 -1 # F3
 */
+/*
+  public static void main(String[] args) {
 	  VecInt coordIndex = new VecInt(20);
 	  coordIndex.pushBack(0);
 	  coordIndex.pushBack(1);
@@ -363,7 +364,8 @@ public class DGP extends DGP_h
 		e.printStackTrace();
 	  }
   }
-
+*/
+  
   public static class Faces implements Faces_h
   {
 	  private int _numVertices;
@@ -440,42 +442,115 @@ public class DGP extends DGP_h
 
 
   //////////////////////////////////////////////////////////////////////
-  public static class Graph implements Graph_h
-  {
+  /*
+   N = 5
+   1 - 2
+   2 - 3
+   3 - 4
+   4 - 5
+   1 - 5
+   */
+  /*
+  public static void main(String[] args) {
+	  Graph g = new Graph(5);
+	  System.out.println("insertEdge(1, 2): " + g.insertEdge(1, 2));
+	  System.out.println("insertEdge(2, 3): " + g.insertEdge(2, 3));
+	  System.out.println("insertEdge(3, 4): " + g.insertEdge(3, 4));
+	  System.out.println("insertEdge(4, 5): " + g.insertEdge(4, 5));
+	  System.out.println("insertEdge(1, 5): " + g.insertEdge(1, 5));
+	  
+	  System.out.println("insertEdge(1, 5): " + g.insertEdge(1, 5));
 
+	  System.out.println("getEdge(3, 4): " + g.getEdge(3, 4));
+	  
+	  System.out.println("getVertex0(2): " + g.getVertex0(2));
+	  System.out.println("getVertex1(2): " + g.getVertex1(2));
+	  
+	  System.out.println("insertEdge(1, 5): " + g.insertEdge(3, 4));
+	  System.out.println("insertEdge(1, 5): " + g.insertEdge(4, 5));
+  }
+  */
+  
+  public static class Graph implements Graph_h
+  { /*
+  	La implementacion la hago con un VecInt (_edges) que contenga a los pares de vertices de cada arista y 
+  	un VecInt[N] (_v0Edges) que para cada vertice indique los indices de los ejes en los que dicho vertice es el v0 (esto se basa
+  	en el hecho de que los pares de vertices (v0-v1) que definen un eje estan ordenados (ie v0 < v1)) 
+   */
+	  private VecInt _edges;
+	  private VecInt[] _v0Edges;
+	  private int _V;
+	  private int _E;
+	  
+	  
+	  public Graph() {
+		  _V = 0;
+	  }
+	  
+	  public Graph(int N) {
+		  _V = N;
+		  erase();
+	  }
+	  
 	public void erase() {
-		// TODO Auto-generated method stub
-		
+		_edges = new VecInt(_V); // estimativamente lo creo del tamaño de la cantidad de nodos 
+		_v0Edges = new VecInt[_V];
+		_E = 0;
 	}
 
 	public int getNumberOfVertices() {
-		// TODO Auto-generated method stub
-		return 0;
+		return _V;
 	}
 
 	public int getNumberOfEdges() {
-		// TODO Auto-generated method stub
-		return 0;
+		return _E;
 	}
 
-	public int getEdge(int iV0, int iV1) {
-		// TODO Auto-generated method stub
-		return 0;
+	private boolean _inRange(int iV0, int iV1) {
+		return (0 < iV0 && iV1 <= _V && (iV1 - iV0) > 0);
+	}
+	
+	public int getEdge(int iV0, int iV1) {		
+		int index = -1;
+		if (_inRange(iV0, iV1)) { // que los nodos esten en el rango 1.._V
+			if (_v0Edges[iV0] != null) {
+				int i = 0;
+				boolean found = false;
+				while (i < _v0Edges[iV0].size() && !found) {
+					int idx = _v0Edges[iV0].get(i);
+					if (_edges.get(idx * 2 + 1) == iV1) {
+						found = true;
+						index = idx;
+					}
+					i++;
+				}
+			}			
+		}
+		return index;
 	}
 
 	public int insertEdge(int iV0, int iV1) {
-		// TODO Auto-generated method stub
-		return 0;
+		if (getEdge(iV0, iV1) != -1 || !_inRange(iV0, iV1)) // si ya existe el eje o nodos fuera de rango, devolver -1 
+			return -1;
+		
+		_edges.pushBack(iV0);
+		_edges.pushBack(iV1);
+
+		if (_v0Edges[iV0] == null)
+			_v0Edges[iV0] = new VecInt(2);
+				
+		int index = _E++;
+		_v0Edges[iV0].pushBack(index);
+		
+		return index;
 	}
 
 	public int getVertex0(int iE) {
-		// TODO Auto-generated method stub
-		return 0;
+		return (0 < iE && iE < _E) ? _edges.get(iE * 2) : -1;
 	}
 
 	public int getVertex1(int iE) {
-		// TODO Auto-generated method stub
-		return 0;
+		return (0 < iE && iE < _E) ? _edges.get(iE * 2 + 1) : -1;
 	}
 
 
