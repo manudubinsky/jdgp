@@ -331,7 +331,6 @@ public class DGP extends DGP_h
   2 1 3 -1 # F2
   2 3 0 -1 # F3
 */
-/*
   public static void main(String[] args) {
 	  VecInt coordIndex = new VecInt(20);
 	  coordIndex.pushBack(0);
@@ -356,20 +355,32 @@ public class DGP extends DGP_h
 		Faces f = new Faces(3, coordIndex);
 		System.out.println("vertices: " + f.getNumberOfVertices());
 		System.out.println("faces: " + f.getNumberOfFaces());
-		System.out.println("faces: " + f.getNumberOfCorners());
+		System.out.println("corners: " + f.getNumberOfCorners());
 		System.out.println("face 2 size: " + f.getFaceSize(2));
 		System.out.println("face 2 #corners: " + f.getNumberOfCorners(2));
-		System.out.println("face 3 vertex 3: " + f.getFaceVertex(4, 1));
+		System.out.println("face 4 vertex 1: " + f.getFaceVertex(4, 1));
+		
+		System.out.println("getCornerFace(0): " + f.getCornerFace(0));
+		System.out.println("getCornerFace(4): " + f.getCornerFace(4));
+		System.out.println("getCornerFace(7): " + f.getCornerFace(7));
+		System.out.println("getCornerFace(13): " + f.getCornerFace(13));
+		System.out.println("getCornerFace(15): " + f.getCornerFace(15));
+		System.out.println("getCornerFace(8): " + f.getCornerFace(8));
+		
+		System.out.println("getNextCorner(0): " + f.getNextCorner(0));
+		System.out.println("getNextCorner(1): " + f.getNextCorner(1));
+		System.out.println("getNextCorner(2): " + f.getNextCorner(2));
+		System.out.println("getNextCorner(3): " + f.getNextCorner(3));
+		System.out.println("getNextCorner(4): " + f.getNextCorner(4));
 	  } catch (Exception e) {
 		e.printStackTrace();
 	  }
   }
-*/
   
   public static class Faces implements Faces_h
   {
 	  private int _numVertices;
-	  private VecInt _coordIndex;
+	  protected VecInt _coordIndex;
 	  private VecInt _facesIndex;
 	  
 	// throws exception if(nV<0), if(coordIndex==null),
@@ -438,6 +449,36 @@ public class DGP extends DGP_h
 		return beginIdx + j - 1;
 	}
 
+	public int getCornerFace(int iC) { // aca se podria hace busqueda binaria
+		int face = -1;
+		int i = 0;		
+		int facesSize = getNumberOfFaces();
+		boolean found = false;
+		while (i < facesSize && !found) {
+			if (_facesIndex.get(i) > iC) {
+				face = i + 1;
+				found = true;
+			} else if (_facesIndex.get(i) == iC)
+				found = true; // es un -1
+			i++;
+		}
+		return face;
+	}
+	
+	public int getNextCorner(int iC) throws Exception {
+		int corner = -1;
+		int face = getCornerFace(iC);
+		// System.out.println("DBG face: " + face);
+		if (face != -1) {
+			int faceSize = getFaceSize(face);
+			// System.out.println("DBG faceSize: " + faceSize);
+			int firstCorner = getFaceFirstCorner(face);
+			// System.out.println("DBG firstCorner: " + firstCorner);
+			corner = ((iC - firstCorner) + 1) % faceSize + firstCorner;
+		}
+		return corner;
+	}
+	
   }
 
 
@@ -479,35 +520,35 @@ public class DGP extends DGP_h
    */
 	  private VecInt _edges;
 	  private VecInt[] _v0Edges;
-	  private int _V;
-	  private int _E;
+	  private int _nV;
+	  private int _nE;
 	  
 	  
 	  public Graph() {
-		  _V = 0;
+		  _nV = 0;
 	  }
 	  
 	  public Graph(int N) {
-		  _V = N;
+		  _nV = N;
 		  erase();
 	  }
 	  
 	public void erase() {
-		_edges = new VecInt(_V); // estimativamente lo creo del tamaño de la cantidad de nodos 
-		_v0Edges = new VecInt[_V];
-		_E = 0;
+		_edges = new VecInt(_nV); // estimativamente lo creo del tamaño de la cantidad de nodos 
+		_v0Edges = new VecInt[_nV];
+		_nE = 0;
 	}
 
 	public int getNumberOfVertices() {
-		return _V;
+		return _nV;
 	}
 
 	public int getNumberOfEdges() {
-		return _E;
+		return _nE;
 	}
 
 	private boolean _inRange(int iV0, int iV1) {
-		return (0 < iV0 && iV1 <= _V && (iV1 - iV0) > 0);
+		return (0 < iV0 && iV1 <= _nV && (iV1 - iV0) > 0);
 	}
 	
 	public int getEdge(int iV0, int iV1) {		
@@ -539,31 +580,115 @@ public class DGP extends DGP_h
 		if (_v0Edges[iV0] == null)
 			_v0Edges[iV0] = new VecInt(2);
 				
-		int index = _E++;
+		int index = _nE++;
 		_v0Edges[iV0].pushBack(index);
 		
 		return index;
 	}
 
 	public int getVertex0(int iE) {
-		return (0 < iE && iE < _E) ? _edges.get(iE * 2) : -1;
+		return (0 < iE && iE < _nE) ? _edges.get(iE * 2) : -1;
 	}
 
 	public int getVertex1(int iE) {
-		return (0 < iE && iE < _E) ? _edges.get(iE * 2 + 1) : -1;
+		return (0 < iE && iE < _nE) ? _edges.get(iE * 2 + 1) : -1;
 	}
 
 
   }
 
-/*    
   //////////////////////////////////////////////////////////////////////
+/*
   public static class PolygonMesh
     extends Faces implements PolygonMesh_h
   {
+	  private Graph _graph;
+	  
+	  public PolygonMesh(VecFloat coord, VecInt  coordIndex) throws Exception {
+		super(coord.size()/3, coordIndex);
+		_buildGraph();
+	  }
+	  
+	private void _buildGraph() {
+		_graph = new Graph(getNumberOfVertices());
+		
+	}
+	
+	public float getVertexCoord(int iV, int j) throws Exception {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 
-    // ASSIGNMENT 1
+	public float getCornerCoord(int iC, int j) throws Exception {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 
+	public int getEdge(int iC) {
+		return -1;
+	}
+
+	public int getEdge(int iV0, int iV1) {
+		return _graph.getEdge(iV0, iV1);
+	}
+
+	public int getVertex0(int iE) {
+		return _graph.getVertex0(iE);
+	}
+
+	public int getVertex1(int iE) {
+		return _graph.getVertex1(iE);
+	}
+
+	public int getNumberOfEdgeFaces(int iE) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public int getEdgeFace(int iE, int j) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public boolean isRegular() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean hasBoundary() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean isBoundaryVertex(int iV) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean isRegularVertex(int iV) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean isSingularVertex(int iV) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean isBoundaryEdge(int iE) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean isRegularEdge(int iE) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean isSingularEdge(int iE) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
   }
 */
 }
