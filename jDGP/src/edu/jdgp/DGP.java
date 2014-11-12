@@ -331,6 +331,7 @@ public class DGP extends DGP_h
   2 1 3 -1 # F2
   2 3 0 -1 # F3
 */
+/*
   public static void main(String[] args) {
 	  VecInt coordIndex = new VecInt(20);
 	  coordIndex.pushBack(0);
@@ -376,7 +377,7 @@ public class DGP extends DGP_h
 		e.printStackTrace();
 	  }
   }
-  
+*/  
   public static class Faces implements Faces_h
   {
 	  private int _numVertices;
@@ -548,11 +549,17 @@ public class DGP extends DGP_h
 	}
 
 	private boolean _inRange(int iV0, int iV1) {
-		return (0 < iV0 && iV1 <= _nV && (iV1 - iV0) > 0);
+		return (0 <= iV0 && iV1 < _nV && (iV1 - iV0) > 0);
 	}
 	
-	public int getEdge(int iV0, int iV1) {		
-		int index = -1;
+	public int getEdge(int iV0, int iV1) {
+		if (iV0 > iV1) {
+			int swap = iV0;
+			iV0 = iV1;
+			iV1 = swap;
+		}
+
+		int index = -1;				
 		if (_inRange(iV0, iV1)) { // que los nodos esten en el rango 1.._V
 			if (_v0Edges[iV0] != null) {
 				int i = 0;
@@ -567,13 +574,21 @@ public class DGP extends DGP_h
 				}
 			}			
 		}
+		
 		return index;
 	}
 
 	public int insertEdge(int iV0, int iV1) {
+		// System.out.println("insertEdge() iV0: " + iV0 + " iV1: " + iV1);
+		if (iV0 > iV1) {
+			int swap = iV0;
+			iV0 = iV1;
+			iV1 = swap;
+		}
+
 		if (getEdge(iV0, iV1) != -1 || !_inRange(iV0, iV1)) // si ya existe el eje o nodos fuera de rango, devolver -1 
 			return -1;
-		
+			
 		_edges.pushBack(iV0);
 		_edges.pushBack(iV1);
 
@@ -594,37 +609,129 @@ public class DGP extends DGP_h
 		return (0 < iE && iE < _nE) ? _edges.get(iE * 2 + 1) : -1;
 	}
 
-
+	public void dump() {
+		int size = _edges.size();
+		int i = 0;
+		while (i < size) {
+			int iV0 = _edges.get(i++);
+			int iV1 = _edges.get(i++);
+			System.out.println(iV0 + " -> " + iV1);
+		}
+	}
   }
 
   //////////////////////////////////////////////////////////////////////
-/*
+  /*	  
+       point [
+          1.633 -0.943 -0.667 # V0
+          0.000  0.000  2.000 # V1
+         -1.633 -0.943 -0.667 # V2
+          0.000  1.886 -0.667 # V3
+       ]
+     }
+     coordIndex [
+       0 1 2 -1 # F0
+       3 1 0 -1 # F1
+       2 1 3 -1 # F2
+       2 3 0 -1 # F3
+     ]
+  */
+  public static void main(String[] args) {
+	  VecFloat coord = new VecFloat(16);
+	  coord.pushBack(1.633f);
+	  coord.pushBack(-0.943f);
+	  coord.pushBack(-0.667f);
+	  coord.pushBack(0.000f);
+	  coord.pushBack(0.000f);
+	  coord.pushBack(2.000f);
+	  coord.pushBack(-1.633f);
+	  coord.pushBack(-0.943f);
+	  coord.pushBack(-0.667f);
+	  coord.pushBack(0.000f);
+	  coord.pushBack(1.886f);
+	  coord.pushBack(-0.667f);
+	   
+	  VecInt coordIndex = new VecInt(20);
+	  coordIndex.pushBack(0);
+	  coordIndex.pushBack(1);
+	  coordIndex.pushBack(2);
+	  coordIndex.pushBack(-1);
+	  coordIndex.pushBack(3);
+	  coordIndex.pushBack(1);
+	  coordIndex.pushBack(0);
+	  coordIndex.pushBack(-1);
+	  coordIndex.pushBack(2);
+	  coordIndex.pushBack(1);
+	  coordIndex.pushBack(3);
+	  coordIndex.pushBack(-1);
+	  coordIndex.pushBack(2);
+	  coordIndex.pushBack(3);
+	  coordIndex.pushBack(0);
+	  coordIndex.pushBack(-1);
+
+	  try {
+		PolygonMesh pm = new PolygonMesh(coord, coordIndex);
+		
+	} catch (Exception e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+  }
+
   public static class PolygonMesh
     extends Faces implements PolygonMesh_h
   {
+	  private int _nV;
 	  private Graph _graph;
+	  private VecFloat _coord;
 	  
 	  public PolygonMesh(VecFloat coord, VecInt  coordIndex) throws Exception {
 		super(coord.size()/3, coordIndex);
+		_nV = coord.size()/3;
+		_coord = coord;
 		_buildGraph();
 	  }
 	  
-	private void _buildGraph() {
-		_graph = new Graph(getNumberOfVertices());
-		
+	private void _buildGraph() throws Exception {
+		System.out.println("_buildGraph() begin... _nV: " + _nV);
+		_graph = new Graph(_nV);
+		// para cada Face agregar los ejes en el grafo
+		System.out.println("_buildGraph() num faces: " + getNumberOfFaces());
+		for (int i = 0; i < getNumberOfFaces(); i++) {
+			int firstCorner = getFaceFirstCorner(i+1);
+			int currentCorner = firstCorner;
+			int nextCorner = getNextCorner(currentCorner);			
+			while (nextCorner != firstCorner) {
+				// System.out.println("_buildGraph() insertEdge face: " + i + " currentCorner: " + currentCorner + " nextCorner: " + nextCorner);
+				_graph.insertEdge(_coordIndex.get(currentCorner), _coordIndex.get(nextCorner));
+				currentCorner = nextCorner;
+				nextCorner = getNextCorner(currentCorner);
+			}
+			// System.out.println("_buildGraph() insertEdge face: " + i + " firstCorner: " + firstCorner + " currentCorner: " + currentCorner);
+			_graph.insertEdge(_coordIndex.get(firstCorner), _coordIndex.get(currentCorner)); //agregar el eje del primero al ultimo nodo de la Face
+		}
+		_graph.dump();
 	}
 	
-	public float getVertexCoord(int iV, int j) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
+	public float getVertexCoord(int iV, int j) throws Exception {		
+		return _coord.get(iV * 3 + j);
 	}
 
 	public float getCornerCoord(int iC, int j) throws Exception {
-		// TODO Auto-generated method stub
-		return 0;
+		int iV = _coordIndex.get(iC);
+		return getVertexCoord(iV, j);
 	}
 
-	public int getEdge(int iC) {
+	public int getEdge(int iC) {		
+		try {
+			int iV0 = _coordIndex.get(iC);
+			int iV1 = _coordIndex.get(getNextCorner(iC));
+			return iV0 < iV1 ? _graph.getEdge(iV0,iV1) : _graph.getEdge(iV1,iV0);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return -1;
 	}
 
@@ -690,5 +797,5 @@ public class DGP extends DGP_h
 		return false;
 	}
   }
-*/
+
 }
