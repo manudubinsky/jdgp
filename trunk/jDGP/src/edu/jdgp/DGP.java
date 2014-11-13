@@ -671,8 +671,10 @@ public class DGP extends DGP_h
 
 	  try {
 		PolygonMesh pm = new PolygonMesh(coord, coordIndex);
-		
-	} catch (Exception e) {
+		for (int i = 0; i < 5; i++) {
+			System.out.println("edgeFaces edge: " + (i+1) + " #edgeFaces: " + pm.getNumberOfEdgeFaces(i+1));
+		}
+	 } catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
@@ -684,11 +686,13 @@ public class DGP extends DGP_h
 	  private int _nV;
 	  private Graph _graph;
 	  private VecFloat _coord;
+	  private Vector<VecInt> _edgeFaces; // le asocia a cada eje sus Faces incidentes
 	  
 	  public PolygonMesh(VecFloat coord, VecInt  coordIndex) throws Exception {
 		super(coord.size()/3, coordIndex);
 		_nV = coord.size()/3;
 		_coord = coord;
+		_edgeFaces = new Vector<VecInt>(); ;
 		_buildGraph();
 	  }
 	  
@@ -698,19 +702,35 @@ public class DGP extends DGP_h
 		// para cada Face agregar los ejes en el grafo
 		System.out.println("_buildGraph() num faces: " + getNumberOfFaces());
 		for (int i = 0; i < getNumberOfFaces(); i++) {
-			int firstCorner = getFaceFirstCorner(i+1);
+			int faceNum = i+1;
+			int firstCorner = getFaceFirstCorner(faceNum);
 			int currentCorner = firstCorner;
-			int nextCorner = getNextCorner(currentCorner);			
+			int nextCorner = getNextCorner(currentCorner);
 			while (nextCorner != firstCorner) {
 				// System.out.println("_buildGraph() insertEdge face: " + i + " currentCorner: " + currentCorner + " nextCorner: " + nextCorner);
-				_graph.insertEdge(_coordIndex.get(currentCorner), _coordIndex.get(nextCorner));
+				_insertEdge(i, currentCorner, nextCorner);
 				currentCorner = nextCorner;
 				nextCorner = getNextCorner(currentCorner);
 			}
 			// System.out.println("_buildGraph() insertEdge face: " + i + " firstCorner: " + firstCorner + " currentCorner: " + currentCorner);
-			_graph.insertEdge(_coordIndex.get(firstCorner), _coordIndex.get(currentCorner)); //agregar el eje del primero al ultimo nodo de la Face
+			_insertEdge(faceNum, firstCorner, currentCorner); //agregar el eje del primero al ultimo nodo de la Face
 		}
 		_graph.dump();
+	}
+	
+	private void _insertEdge(int iF, int iC0, int iC1) {
+		// _edgeFaces se base en que _graph.insertEdge(iV0, iV1) inserta de forma correlativa (ie.: primero el 1, despues el 2, etc.) 
+		int iV0 = _coordIndex.get(iC0);
+		int iV1 = _coordIndex.get(iC1);
+		int edge = _graph.insertEdge(iV0, iV1);
+		if (edge == -1) {
+			edge = _graph.getEdge(iV0, iV1);
+		}		
+		// aca hay que agregar la face al _edgeFaces
+		if (edge == _edgeFaces.size()) {
+			_edgeFaces.add(edge, new VecInt(1));
+		}
+		_edgeFaces.get(edge).pushBack(iF); //agregar la Face asociada al eje
 	}
 	
 	public float getVertexCoord(int iV, int j) throws Exception {		
@@ -747,14 +767,12 @@ public class DGP extends DGP_h
 		return _graph.getVertex1(iE);
 	}
 
-	public int getNumberOfEdgeFaces(int iE) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfEdgeFaces(int iE) {		
+		return _edgeFaces.get(iE-1).size();
 	}
 
 	public int getEdgeFace(int iE, int j) {
-		// TODO Auto-generated method stub
-		return 0;
+		return _edgeFaces.get(iE-1).get(j);
 	}
 
 	public boolean isRegular() {
