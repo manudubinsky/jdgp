@@ -687,6 +687,10 @@ public class DGP extends DGP_h
 	  private Graph _graph;
 	  private VecFloat _coord;
 	  private Vector<VecInt> _edgeFaces; // le asocia a cada eje sus Faces incidentes
+	  private VecInt _vertexType;
+	  private static final int BOUNDARY_TYPE = 1;
+	  private static final int REGULAR_TYPE = 2;
+	  private static final int SINGULAR_TYPE = 3;
 	  
 	  public PolygonMesh(VecFloat coord, VecInt  coordIndex) throws Exception {
 		super(coord.size()/3, coordIndex);
@@ -731,6 +735,39 @@ public class DGP extends DGP_h
 			_edgeFaces.add(edge, new VecInt(1));
 		}
 		_edgeFaces.get(edge).pushBack(iF); //agregar la Face asociada al eje
+	}
+	
+	private void _setVertexTypes() throws Exception {
+		_vertexType = new VecInt(_nV);
+		// inicializo
+		for (int i = 0; i < _nV; i++) {
+			_vertexType.pushBack(-1);
+		}
+		// iterar los ejes del grafo
+		for (int i = 0; i < _graph.getNumberOfEdges(); i++) {
+			int edgeType = _edgeType(i);
+			_setVertexType(edgeType, _graph.getVertex0(i));
+			_setVertexType(edgeType, _graph.getVertex1(i));
+		}
+	}
+	
+	private void _setVertexType(int edgeType, int iV){
+		/* ACA!!!
+		int vertexType = _vertexType.get(iV);
+		if (vertexType == -1)
+			_vertexType.set(iV, edgeType); // inicializo con el vertice con el tipo deñ primer eje incidente
+		*/
+	}
+	
+	private int _edgeType(int iE) throws Exception {
+		int type = -1;
+		if (isRegularEdge(iE))
+			type = REGULAR_TYPE;
+		else if (isBoundaryEdge(iE))
+			type = BOUNDARY_TYPE;
+		else if (isSingularEdge(iE))
+			type = SINGULAR_TYPE;
+		return type;
 	}
 	
 	public float getVertexCoord(int iV, int j) throws Exception {		
@@ -801,18 +838,15 @@ public class DGP extends DGP_h
 	}
 
 	public boolean isBoundaryEdge(int iE) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		return _edgeFaces.get(iE-1).size() == 1;
 	}
 
 	public boolean isRegularEdge(int iE) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		return _edgeFaces.get(iE-1).size() == 2;
 	}
 
 	public boolean isSingularEdge(int iE) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		return _edgeFaces.get(iE-1).size() > 2;
 	}
   }
 
