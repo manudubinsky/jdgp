@@ -7,6 +7,8 @@ package edu.jdgp;
 
 import  java.util.*;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
+
 public class DGP extends DGP_h
 {
   //////////////////////////////////////////////////////////////////////
@@ -520,7 +522,7 @@ public class DGP extends DGP_h
   	en el hecho de que los pares de vertices (v0-v1) que definen un eje estan ordenados (ie v0 < v1)) 
    */
 	  private VecInt _edges;
-	  private VecInt[] _v0Edges;
+	  private VecInt[] _vertexEdges;
 	  private int _nV;
 	  private int _nE;
 	  
@@ -536,7 +538,7 @@ public class DGP extends DGP_h
 	  
 	public void erase() {
 		_edges = new VecInt(_nV); // estimativamente lo creo del tamaño de la cantidad de nodos 
-		_v0Edges = new VecInt[_nV];
+		_vertexEdges = new VecInt[_nV];
 		_nE = 0;
 	}
 
@@ -561,11 +563,11 @@ public class DGP extends DGP_h
 
 		int index = -1;				
 		if (_inRange(iV0, iV1)) { // que los nodos esten en el rango 1.._V
-			if (_v0Edges[iV0] != null) {
+			if (_vertexEdges[iV0] != null) {
 				int i = 0;
 				boolean found = false;
-				while (i < _v0Edges[iV0].size() && !found) {
-					int idx = _v0Edges[iV0].get(i);
+				while (i < _vertexEdges[iV0].size() && !found) {
+					int idx = _vertexEdges[iV0].get(i);
 					if (_edges.get(idx * 2 + 1) == iV1) {
 						found = true;
 						index = idx;
@@ -592,11 +594,15 @@ public class DGP extends DGP_h
 		_edges.pushBack(iV0);
 		_edges.pushBack(iV1);
 
-		if (_v0Edges[iV0] == null)
-			_v0Edges[iV0] = new VecInt(2);
-				
+		if (_vertexEdges[iV0] == null)
+			_vertexEdges[iV0] = new VecInt(2);
+
+		if (_vertexEdges[iV1] == null)
+			_vertexEdges[iV1] = new VecInt(2);
+
 		int index = _nE++;
-		_v0Edges[iV0].pushBack(index);
+		_vertexEdges[iV0].pushBack(index);
+		_vertexEdges[iV1].pushBack(index);
 		
 		return index;
 	}
@@ -609,6 +615,10 @@ public class DGP extends DGP_h
 		return (0 < iE && iE < _nE) ? _edges.get(iE * 2 + 1) : -1;
 	}
 
+	public VecInt getVertexEdges(int iV) {
+		return _vertexEdges[iV];
+	}
+	
 	public void dump() {
 		int size = _edges.size();
 		int i = 0;
@@ -671,8 +681,8 @@ public class DGP extends DGP_h
 
 	  try {
 		PolygonMesh pm = new PolygonMesh(coord, coordIndex);
-		for (int i = 0; i < 5; i++) {
-			System.out.println("edgeFaces edge: " + (i+1) + " #edgeFaces: " + pm.getNumberOfEdgeFaces(i+1));
+		for (int i = 0; i < 6; i++) {
+			System.out.println("edgeFaces edge: " + i + " #edgeFaces: " + pm.getNumberOfEdgeFaces(i));
 		}
 	 } catch (Exception e) {
 		// TODO Auto-generated catch block
@@ -687,10 +697,10 @@ public class DGP extends DGP_h
 	  private Graph _graph;
 	  private VecFloat _coord;
 	  private Vector<VecInt> _edgeFaces; // le asocia a cada eje sus Faces incidentes
-	  private VecInt _vertexType;
 	  private static final int BOUNDARY_TYPE = 1;
-	  private static final int REGULAR_TYPE = 2;
-	  private static final int SINGULAR_TYPE = 3;
+	  private static final int SINGULAR_TYPE = 2;
+	  private Boolean _isRegular;
+	  private Boolean _hasBoundary;
 	  
 	  public PolygonMesh(VecFloat coord, VecInt  coordIndex) throws Exception {
 		super(coord.size()/3, coordIndex);
@@ -736,40 +746,7 @@ public class DGP extends DGP_h
 		}
 		_edgeFaces.get(edge).pushBack(iF); //agregar la Face asociada al eje
 	}
-	
-	private void _setVertexTypes() throws Exception {
-		_vertexType = new VecInt(_nV);
-		// inicializo
-		for (int i = 0; i < _nV; i++) {
-			_vertexType.pushBack(-1);
-		}
-		// iterar los ejes del grafo
-		for (int i = 0; i < _graph.getNumberOfEdges(); i++) {
-			int edgeType = _edgeType(i);
-			_setVertexType(edgeType, _graph.getVertex0(i));
-			_setVertexType(edgeType, _graph.getVertex1(i));
-		}
-	}
-	
-	private void _setVertexType(int edgeType, int iV){
-		/* ACA!!!
-		int vertexType = _vertexType.get(iV);
-		if (vertexType == -1)
-			_vertexType.set(iV, edgeType); // inicializo con el vertice con el tipo deñ primer eje incidente
-		*/
-	}
-	
-	private int _edgeType(int iE) throws Exception {
-		int type = -1;
-		if (isRegularEdge(iE))
-			type = REGULAR_TYPE;
-		else if (isBoundaryEdge(iE))
-			type = BOUNDARY_TYPE;
-		else if (isSingularEdge(iE))
-			type = SINGULAR_TYPE;
-		return type;
-	}
-	
+		
 	public float getVertexCoord(int iV, int j) throws Exception {		
 		return _coord.get(iV * 3 + j);
 	}
@@ -805,7 +782,7 @@ public class DGP extends DGP_h
 	}
 
 	public int getNumberOfEdgeFaces(int iE) {		
-		return _edgeFaces.get(iE-1).size();
+		return _edgeFaces.get(iE).size();
 	}
 
 	public int getEdgeFace(int iE, int j) {
@@ -813,30 +790,91 @@ public class DGP extends DGP_h
 	}
 
 	public boolean isRegular() {
-		// TODO Auto-generated method stub
-		return false;
+		if (_isRegular == null) {
+			_isRegular = true;
+			// primero analizo los ejes
+			int i = 0;
+			boolean finished = false;
+			while (i < _edgeFaces.size() && !finished) {
+				try {
+					if (!isRegularEdge(i)) {
+						_isRegular = false;
+						finished = true;
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				i++;
+			}
+
+			if (_isRegular) { // ahora hay que analizar los vertices
+				i = 0;
+				finished = false;
+				while (i < _nV && !finished) {
+					try {
+						if (!isRegularVertex(i)) {
+							_isRegular = false;
+							finished = true;
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					i++;
+				}				
+			}
+		}
+		return _isRegular.booleanValue();
 	}
 
 	public boolean hasBoundary() {
-		// TODO Auto-generated method stub
-		return false;
+		if (_hasBoundary == null) {
+			_hasBoundary = false;
+			int i = 0;
+			boolean finished = false;
+			while (i < _edgeFaces.size() && !finished) {
+				try {
+					if (isBoundaryEdge(i)) {
+						_hasBoundary = true;
+						finished = true;
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				i++;
+			}
+		}
+		return _hasBoundary.booleanValue();
 	}
 
 	public boolean isBoundaryVertex(int iV) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		return (getVertexType(iV) & BOUNDARY_TYPE) == BOUNDARY_TYPE;
 	}
 
 	public boolean isRegularVertex(int iV) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		return !isSingularVertex(iV);
 	}
 
 	public boolean isSingularVertex(int iV) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		return (getVertexType(iV) & SINGULAR_TYPE) == SINGULAR_TYPE;
 	}
 
+	public int getVertexType(int iV) throws Exception {
+		int vertexType = 0;
+		VecInt vertexEdges = _graph.getVertexEdges(iV);
+		for (int i = 0; i < vertexEdges.size(); i++) {
+			if ((vertexType & BOUNDARY_TYPE) == 0 && isBoundaryEdge(i))
+				vertexType |= BOUNDARY_TYPE; // marco el nodo como borde
+			
+			if ((vertexType & SINGULAR_TYPE) == 0 && isSingularEdge(i))
+				vertexType |= SINGULAR_TYPE; // marco el nodo como singular				
+		}
+		
+		if ((vertexType & SINGULAR_TYPE) == 0) {
+		// hay que analizar si el subgrafo dual es conexo
+		}
+		return vertexType;
+	}
+	
 	public boolean isBoundaryEdge(int iE) throws Exception {
 		return _edgeFaces.get(iE-1).size() == 1;
 	}
