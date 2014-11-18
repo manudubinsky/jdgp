@@ -27,7 +27,12 @@ public class DGP extends DGP_h
 		_vecLen = N;
 		_reset();
 	}
-	
+
+	public VecInt(int N, int initValue) {
+		_vecLen = N;
+		init(initValue);
+	}
+
 	private void _reset() {
 		_vec = new int[_vecLen];
 		_size = 0;
@@ -81,6 +86,10 @@ public class DGP extends DGP_h
 		_size--;
 	}
 
+	public int getPopBack() {
+		return _vec[--_size];		
+	}
+	
 	public void set(int j, int vj) throws ArrayIndexOutOfBoundsException {
 		if (j < 0 || j >= _size)
 			throw new ArrayIndexOutOfBoundsException();
@@ -91,10 +100,20 @@ public class DGP extends DGP_h
 	}
 	
 	public void dump() {
+		System.out.println("*****");
+		System.out.println("dump() _vecLen: " + _vecLen + " _size: " + _size);
 		for (int i = 0; i < _vecLen; i++) {
 			System.out.print(" " + _vec[i]);
 		}
-		System.out.println();
+		System.out.println("");
+		System.out.println("*****");
+	}
+	
+	public void init(int initValue) {
+		_reset();
+		for (int i = 0; i < _vecLen; i++) {
+			pushBack(initValue);
+		}
 	}
   }
 
@@ -494,26 +513,19 @@ public class DGP extends DGP_h
    4 - 5
    1 - 5
    */
-  /*
-  public static void main(String[] args) {
-	  Graph g = new Graph(5);
-	  System.out.println("insertEdge(1, 2): " + g.insertEdge(1, 2));
-	  System.out.println("insertEdge(2, 3): " + g.insertEdge(2, 3));
-	  System.out.println("insertEdge(3, 4): " + g.insertEdge(3, 4));
-	  System.out.println("insertEdge(4, 5): " + g.insertEdge(4, 5));
-	  System.out.println("insertEdge(1, 5): " + g.insertEdge(1, 5));
-	  
-	  System.out.println("insertEdge(1, 5): " + g.insertEdge(1, 5));
 
-	  System.out.println("getEdge(3, 4): " + g.getEdge(3, 4));
-	  
-	  System.out.println("getVertex0(2): " + g.getVertex0(2));
-	  System.out.println("getVertex1(2): " + g.getVertex1(2));
-	  
-	  System.out.println("insertEdge(1, 5): " + g.insertEdge(3, 4));
-	  System.out.println("insertEdge(1, 5): " + g.insertEdge(4, 5));
+ /*
+  public static void main(String[] args) {
+	  Graph g = new Graph(5);	  
+//	  System.out.println("insertEdge(0, 1): " + g.insertEdge(0, 1));
+	  System.out.println("insertEdge(1, 2): " + g.insertEdge(1, 2));
+//	  System.out.println("insertEdge(2, 3): " + g.insertEdge(2, 3));
+	  System.out.println("insertEdge(3, 4): " + g.insertEdge(3, 4));
+	  System.out.println("insertEdge(0, 4): " + g.insertEdge(0, 4));
+	  	  
+	  System.out.println("isConnected?: " + g.isConnected());
   }
-  */
+*/
   
   public static class Graph implements Graph_h
   { /*
@@ -608,15 +620,70 @@ public class DGP extends DGP_h
 	}
 
 	public int getVertex0(int iE) {
-		return (0 < iE && iE < _nE) ? _edges.get(iE * 2) : -1;
+		return (0 <= iE && iE < _nE) ? _edges.get(iE * 2) : -1;
 	}
 
 	public int getVertex1(int iE) {
-		return (0 < iE && iE < _nE) ? _edges.get(iE * 2 + 1) : -1;
+		return (0 <= iE && iE < _nE) ? _edges.get(iE * 2 + 1) : -1;
 	}
 
 	public VecInt getVertexEdges(int iV) {
 		return _vertexEdges[iV];
+	}
+	
+	// devuelve el nodo con menor cantidad de ejes incidentes
+	public int _vertexLeastEdges() {
+		int iV = -1;
+		int i = 0;
+		boolean finished = false;
+		while (i < _nV && !finished) {
+			if (_vertexEdges[i] == null || _vertexEdges[i].size() == 0) {
+				iV = -1;
+				finished = true;
+			} else if (iV == -1 || _vertexEdges[i].size() < _vertexEdges[iV].size()) {
+				iV = i;
+			}
+			i++;
+		}		
+		return iV;
+	}
+	
+	public boolean isConnected() {
+		boolean isConnected = false;
+		VecInt visited = new VecInt(_nV, 0);
+		VecInt haveToVisit = new VecInt(_nV);		
+		int firstVertex = _vertexLeastEdges(); // inicializo con el nodo con menor cantidad de ejes
+		if (firstVertex > -1) {
+			haveToVisit.pushBack(firstVertex);
+			visited.set(firstVertex, 1);
+			while (haveToVisit.size() > 0) {
+				int currentVertex = haveToVisit.getPopBack();
+				for (int i = 0; i < _vertexEdges[currentVertex].size(); i++) {
+					int iE = _vertexEdges[currentVertex].get(i);
+					int iV0 = getVertex0(iE);
+					int iV1 = getVertex1(iE);
+					if (visited.get(iV0) == 0) {
+						haveToVisit.pushBack(iV0);
+						visited.set(iV0, 1);
+					}
+					if (visited.get(iV1) == 0) {
+						haveToVisit.pushBack(iV1);
+						visited.set(iV1, 1);
+					}
+				}
+			}
+			int i = 0;
+			boolean finished = false;
+			while (i < _nV && !finished) {
+				if (visited.get(i) == 0)
+					finished = true;
+				else
+					i++;
+			}
+			if (i == _nV)
+				isConnected = true;
+		}
+		return isConnected;
 	}
 	
 	public void dump() {
@@ -646,6 +713,7 @@ public class DGP extends DGP_h
        2 3 0 -1 # F3
      ]
   */
+
   public static void main(String[] args) {
 	  VecFloat coord = new VecFloat(16);
 	  coord.pushBack(1.633f);
@@ -684,6 +752,9 @@ public class DGP extends DGP_h
 		for (int i = 0; i < 6; i++) {
 			System.out.println("edgeFaces edge: " + i + " #edgeFaces: " + pm.getNumberOfEdgeFaces(i));
 		}
+		System.out.println("isRegular?: " + pm.isRegular());
+		System.out.println("hasBoundary?: " + pm.hasBoundary());
+		
 	 } catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
@@ -876,15 +947,15 @@ public class DGP extends DGP_h
 	}
 	
 	public boolean isBoundaryEdge(int iE) throws Exception {
-		return _edgeFaces.get(iE-1).size() == 1;
+		return _edgeFaces.get(iE).size() == 1;
 	}
 
 	public boolean isRegularEdge(int iE) throws Exception {
-		return _edgeFaces.get(iE-1).size() == 2;
+		return _edgeFaces.get(iE).size() == 2;
 	}
 
 	public boolean isSingularEdge(int iE) throws Exception {
-		return _edgeFaces.get(iE-1).size() > 2;
+		return _edgeFaces.get(iE).size() > 2;
 	}
   }
 
