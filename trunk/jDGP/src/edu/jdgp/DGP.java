@@ -348,7 +348,7 @@ public class DGP extends DGP_h
   //////////////////////////////////////////////////////////////////////
   /*	  
   0 1 2 -1 # F0
-  3 1 0  3 -1 # F1
+  3 1 0 -1 # F1
   2 1 3 -1 # F2
   2 3 0 -1 # F3
 */
@@ -362,7 +362,6 @@ public class DGP extends DGP_h
 	  coordIndex.pushBack(3);
 	  coordIndex.pushBack(1);
 	  coordIndex.pushBack(0);
-	  coordIndex.pushBack(3);
 	  coordIndex.pushBack(-1);
 	  coordIndex.pushBack(2);
 	  coordIndex.pushBack(1);
@@ -398,7 +397,8 @@ public class DGP extends DGP_h
 		e.printStackTrace();
 	  }
   }
-*/  
+*/
+  
   public static class Faces implements Faces_h
   {
 	  private int _numVertices;
@@ -699,6 +699,63 @@ public class DGP extends DGP_h
 
   //////////////////////////////////////////////////////////////////////
   /*	  
+  point [
+          1.633 -0.943 -0.667 # V0
+          0.000  0.000  2.000 # V1
+         -1.633 -0.943 -0.667 # V2
+          0.000  1.886 -0.667 # V3
+          0.000  1.886 -0.667 # V4
+  ]
+}
+coordIndex [
+  0 1 2 -1 # F0
+  3 4 2 -1 # F1
+]
+*/
+
+  public static void main(String[] args) {
+	  VecFloat coord = new VecFloat(16);
+	  coord.pushBack(1.633f);
+	  coord.pushBack(-0.943f);
+	  coord.pushBack(-0.667f);
+	  coord.pushBack(0.000f);
+	  coord.pushBack(0.000f);
+	  coord.pushBack(2.000f);
+	  coord.pushBack(-1.633f);
+	  coord.pushBack(-0.943f);
+	  coord.pushBack(-0.667f);
+	  coord.pushBack(0.000f);
+	  coord.pushBack(1.886f);
+	  coord.pushBack(-0.667f);
+	  coord.pushBack(0.000f);
+	  coord.pushBack(1.886f);
+	  coord.pushBack(-0.667f);
+	   
+	  VecInt coordIndex = new VecInt(10);
+	  coordIndex.pushBack(0);
+	  coordIndex.pushBack(1);
+	  coordIndex.pushBack(2);
+	  coordIndex.pushBack(-1);
+	  coordIndex.pushBack(3);
+	  coordIndex.pushBack(4);
+	  coordIndex.pushBack(2);
+	  coordIndex.pushBack(-1);
+
+	  try {
+		PolygonMesh pm = new PolygonMesh(coord, coordIndex);
+		for (int i = 0; i < 2; i++) {
+			System.out.println("edgeFaces edge: " + i + " #edgeFaces: " + pm.getNumberOfEdgeFaces(i));
+		}
+		System.out.println("isRegular?: " + pm.isRegular());
+		System.out.println("hasBoundary?: " + pm.hasBoundary());
+		
+	 } catch (Exception e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+  }
+
+  /*	  
        point [
           1.633 -0.943 -0.667 # V0
           0.000  0.000  2.000 # V1
@@ -713,7 +770,7 @@ public class DGP extends DGP_h
        2 3 0 -1 # F3
      ]
   */
-
+/*
   public static void main(String[] args) {
 	  VecFloat coord = new VecFloat(16);
 	  coord.pushBack(1.633f);
@@ -760,7 +817,8 @@ public class DGP extends DGP_h
 		e.printStackTrace();
 	}
   }
-
+*/
+  
   public static class PolygonMesh
     extends Faces implements PolygonMesh_h
   {
@@ -793,7 +851,7 @@ public class DGP extends DGP_h
 			int nextCorner = getNextCorner(currentCorner);
 			while (nextCorner != firstCorner) {
 				// System.out.println("_buildGraph() insertEdge face: " + i + " currentCorner: " + currentCorner + " nextCorner: " + nextCorner);
-				_insertEdge(i, currentCorner, nextCorner);
+				_insertEdge(faceNum, currentCorner, nextCorner);
 				currentCorner = nextCorner;
 				nextCorner = getNextCorner(currentCorner);
 			}
@@ -940,10 +998,45 @@ public class DGP extends DGP_h
 				vertexType |= SINGULAR_TYPE; // marco el nodo como singular				
 		}
 		
-		if ((vertexType & SINGULAR_TYPE) == 0) {
-		// hay que analizar si el subgrafo dual es conexo
-		}
+		if ((vertexType & SINGULAR_TYPE) == 0) // hay que analizar si el subgrafo dual es conexo		
+			vertexType |= !_vertexDualSubgraph(iV).isConnected() ? SINGULAR_TYPE : 0;
+
 		return vertexType;
+	}
+	
+	public Graph _vertexDualSubgraph(int iV) throws Exception {		
+		//conseguir los ejes incidentes al nodo
+			//hacer un map que permita indexar las caras asociadas a los ejes:
+				//la key es el nro. de cara y el value es un nro. secuencial que identifique a esa cara como nodo del subgrafo dual
+
+		VecInt vertexEdges = _graph.getVertexEdges(iV);
+		Map<Integer, Integer> faceToVertex = new HashMap<Integer, Integer>();
+		int vertexIndex = 0;
+		for (int i = 0; i < vertexEdges.size(); i++) {
+			VecInt edgeFaces = _edgeFaces.get(vertexEdges.get(i));
+			for (int j = 0; j < edgeFaces.size(); j++) {
+				int iF = edgeFaces.get(j);
+				if (!faceToVertex.containsKey(iF)) {
+					faceToVertex.put(iF, vertexIndex++);
+				}
+			}
+		}
+
+		//con el map se puede construir el grafo pq ya se conocen las caras-nodos
+		//para cada eje incidente al nodo, si es regular, agregar un eje entre las caras-nodos que corresponden en el grafo
+		Graph dualGraph = new Graph(faceToVertex.size());
+		for (int i = 0; i < vertexEdges.size(); i++) {
+			int iE = vertexEdges.get(i);
+			if (isRegularEdge(iE)) {
+			//agrego un eje en el grafo dual
+				VecInt edgeFaces = _edgeFaces.get(iE);
+				dualGraph.insertEdge(faceToVertex.get(edgeFaces.get(0)),
+										faceToVertex.get(edgeFaces.get(1)));
+			}
+		}
+		
+		
+		return dualGraph;
 	}
 	
 	public boolean isBoundaryEdge(int iE) throws Exception {
