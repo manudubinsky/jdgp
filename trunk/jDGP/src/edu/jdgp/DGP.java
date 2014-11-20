@@ -822,8 +822,8 @@ coordIndex [
   public static class PolygonMesh
     extends Faces implements PolygonMesh_h
   {
-	  private int _nV;
-	  private Graph _graph;
+	  protected int _nV;
+	  protected Graph _graph;
 	  private VecFloat _coord;
 	  private Vector<VecInt> _edgeFaces; // le asocia a cada eje sus Faces incidentes
 	  private static final int BOUNDARY_TYPE = 1;
@@ -889,7 +889,7 @@ coordIndex [
 		try {
 			int iV0 = _coordIndex.get(iC);
 			int iV1 = _coordIndex.get(getNextCorner(iC));
-			return iV0 < iV1 ? _graph.getEdge(iV0,iV1) : _graph.getEdge(iV1,iV0);
+			return _graph.getEdge(iV0,iV1);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
