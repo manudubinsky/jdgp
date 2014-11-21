@@ -5,7 +5,7 @@ import edu.jdgp.DGP.PolygonMesh;
 public class SurfaceFlattener {
 	DecoratedPolygonMesh _surface;
 	
-	public SurfaceFlattener(PolygonMesh surface) {
+	public SurfaceFlattener(PolygonMesh surface) throws Exception {
 		_surface = new DecoratedPolygonMesh(surface);
 	}
 	

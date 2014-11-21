@@ -145,6 +145,11 @@ public class DGP extends DGP_h
 		_reset();				
 	}
 
+	public VecFloat(int N, float initValue) {
+		_vecLen = N;
+		init(initValue);
+	}
+
 	private void _reset() {
 		_vec = new float[_vecLen];
 		_size = 0;
@@ -207,6 +212,23 @@ public class DGP extends DGP_h
 	public void swap(VecFloat_h other) throws Exception {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public void dump() {
+		System.out.println("*****");
+		System.out.println("dump() _vecLen: " + _vecLen + " _size: " + _size);
+		for (int i = 0; i < _vecLen; i++) {
+			System.out.print(" " + _vec[i]);
+		}
+		System.out.println("");
+		System.out.println("*****");
+	}
+
+	public void init(float initValue) {
+		_reset();
+		for (int i = 0; i < _vecLen; i++) {
+			pushBack(initValue);
+		}
 	}
 
   }
