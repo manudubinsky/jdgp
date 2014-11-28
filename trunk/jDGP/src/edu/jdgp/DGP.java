@@ -374,7 +374,7 @@ public class DGP extends DGP_h
   2 1 3 -1 # F2
   2 3 0 -1 # F3
 */
-/*
+
   public static void main(String[] args) {
 	  VecInt coordIndex = new VecInt(20);
 	  coordIndex.pushBack(0);
@@ -395,7 +395,24 @@ public class DGP extends DGP_h
 	  coordIndex.pushBack(-1);
 
 	  try {
+
 		Faces f = new Faces(3, coordIndex);
+		System.out.println("faces: " + f.getNumberOfFaces());
+		System.out.println("getFaceFirstCorner(1): " + f.getFaceFirstCorner(1));
+		int iC = f.getFaceFirstCorner(2);
+		System.out.println("getFaceFirstCorner(2): " + iC);
+		iC = f.getNextCorner(iC);
+		System.out.println("getNextCorner: " + iC);
+		iC = f.getNextCorner(iC);
+		System.out.println("getNextCorner: " + iC);
+		iC = f.getNextCorner(iC);
+		System.out.println("getNextCorner: " + iC);
+		iC = f.getNextCorner(iC);
+		System.out.println("getNextCorner: " + iC);
+		iC = f.getNextCorner(iC);
+		System.out.println("getNextCorner: " + iC);
+
+/*
 		System.out.println("vertices: " + f.getNumberOfVertices());
 		System.out.println("faces: " + f.getNumberOfFaces());
 		System.out.println("corners: " + f.getNumberOfCorners());
@@ -415,11 +432,12 @@ public class DGP extends DGP_h
 		System.out.println("getNextCorner(2): " + f.getNextCorner(2));
 		System.out.println("getNextCorner(3): " + f.getNextCorner(3));
 		System.out.println("getNextCorner(4): " + f.getNextCorner(4));
+*/
 	  } catch (Exception e) {
 		e.printStackTrace();
 	  }
   }
-*/
+
   
   public static class Faces implements Faces_h
   {
@@ -734,7 +752,7 @@ coordIndex [
   3 4 2 -1 # F1
 ]
 */
-
+/*
   public static void main(String[] args) {
 	  VecFloat coord = new VecFloat(16);
 	  coord.pushBack(1.633f);
@@ -776,7 +794,7 @@ coordIndex [
 		e.printStackTrace();
 	}
   }
-
+*/
   /*	  
        point [
           1.633 -0.943 -0.667 # V0

@@ -7,11 +7,15 @@ import edu.jdgp.DGP.VecInt;
 
 public class DecoratedPolygonMesh {
 	private PolygonMesh _mesh;
+	private Graph _graph;
 	private VecFloat _translatedEdges; //coordenadas de los ejes trasladados al origen 
+	private VecFloat _facesNormals;
 	
 	public DecoratedPolygonMesh(PolygonMesh mesh) throws Exception {
 		_mesh = mesh;
+		_graph = mesh._graph;
 		_translateEdges();
+		// _calculateFacesNormals();
 	}
 
 	private void _translateEdges() throws Exception {
@@ -25,6 +29,19 @@ public class DecoratedPolygonMesh {
 				_translatedEdges.pushBack(_mesh.getVertexCoord(iV1, j) - _mesh.getVertexCoord(iV0, j));
 			}
 		}
+	}
+	
+	private void _calculateFacesNormals() throws Exception {
+		int iE0, iE1;
+		int faces = _mesh.getNumberOfFaces();
+		_facesNormals = new VecFloat(faces * 3);		
+		for (int i = 0; i < faces; i++) {
+			int iC = _mesh.getFaceFirstCorner(i);
+			iE0 = _mesh.getEdge(iC);
+			iE1 = _mesh.getEdge(_mesh.getNextCorner(iC));
+			//aca viene el cross product 
+		}
+		
 	}
 	
 	public float norm2(int iE) {
