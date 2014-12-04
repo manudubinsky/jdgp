@@ -484,7 +484,9 @@ public class DGP extends DGP_h
 	}
 	
 	public int getNumberOfCorners(int iF) {
+		// System.out.println("getNumberOfCorners iF: " + iF);
 		int beginIdx = iF == 1 ? 0 : (_facesIndex.get(iF - 2) + 1);
+		// System.out.println("getNumberOfCorners iF: " + iF + " beginIdx: " + beginIdx);
 		int endIdx = _facesIndex.get(iF - 1);
 		int size = endIdx - beginIdx;
 		return size;
