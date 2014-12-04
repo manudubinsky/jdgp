@@ -9,13 +9,13 @@ public class DecoratedPolygonMesh {
 	private PolygonMesh _mesh;
 	private Graph _graph;
 	private VecFloat _translatedEdges; //coordenadas de los ejes trasladados al origen 
-	private VecFloat _facesNormals;
+	private VecFloat _normalizedFacesNormals;
 	
 	public DecoratedPolygonMesh(PolygonMesh mesh) throws Exception {
 		_mesh = mesh;
 		_graph = mesh._graph;
 		_translateEdges();
-		// _calculateFacesNormals();
+		_calculateFacesNormals();
 	}
 
 	private void _translateEdges() throws Exception {
@@ -29,19 +29,38 @@ public class DecoratedPolygonMesh {
 				_translatedEdges.pushBack(_mesh.getVertexCoord(iV1, j) - _mesh.getVertexCoord(iV0, j));
 			}
 		}
+		// _translatedEdges.dump();
 	}
 	
 	private void _calculateFacesNormals() throws Exception {
 		int iE0, iE1;
 		int faces = _mesh.getNumberOfFaces();
-		_facesNormals = new VecFloat(faces * 3);		
+		_normalizedFacesNormals = new VecFloat(faces * 3);
+		
+		System.out.println("_calculateFacesNormals faces: " + faces);
+		
 		for (int i = 0; i < faces; i++) {
-			int iC = _mesh.getFaceFirstCorner(i);
+			int iC = _mesh.getFaceFirstCorner(i+1);
 			iE0 = _mesh.getEdge(iC);
 			iE1 = _mesh.getEdge(_mesh.getNextCorner(iC));
-			//aca viene el cross product 
+			// calculo la normal a la cara (ie. el producto vectorial de los 2 ejes de la cara)
+			// [iE0[1] * iE1[2] - iE0[2] * iE1[1], 
+			//  - iE0[0] * iE1[2] + iE0[2] * iE1[0],
+			//  iE0[0] * iE1[1] - iE0[1] * iE1[0]]
+			// System.out.println("iE0[1]: " + _translatedEdges.get(iE0 + 1) + " iE1[2]: " + _translatedEdges.get(iE1 + 2) + " iE0[2]: " + _translatedEdges.get(iE0 + 2) + " iE1[1]: " + _translatedEdges.get(iE1 + 2)); 
+			float coord0 = _translatedEdges.get(iE0 * 3 + 1) * _translatedEdges.get(iE1 * 3 + 2) - 
+					_translatedEdges.get(iE0 * 3 + 2) * _translatedEdges.get(iE1 * 3 + 1);
+			float coord1 = _translatedEdges.get(iE0 * 3 + 2) * _translatedEdges.get(iE1 * 3) - 
+					_translatedEdges.get(iE0 * 3) * _translatedEdges.get(iE1 * 3 + 2);
+			float coord2 = _translatedEdges.get(iE0 * 3) * _translatedEdges.get(iE1 * 3 + 1) - 
+					_translatedEdges.get(iE0 * 3 + 1) * _translatedEdges.get(iE1 * 3);
+			// System.out.println("iF: " + (i+1) + " iE0: " + iE0 + " iE1: " + iE1 + " coord0: " + coord0 + " coord1: " + coord1 + " coord2: " + coord2);
+			float norm2 = (float)Math.sqrt(Math.pow(coord0, 2) + Math.pow(coord1, 2) + Math.pow(coord2, 2));
+			_normalizedFacesNormals.pushBack(coord0/norm2);
+			_normalizedFacesNormals.pushBack(coord1/norm2);
+			_normalizedFacesNormals.pushBack(coord2/norm2);
 		}
-		
+		// _normalizedFacesNormals.dump();
 	}
 	
 	public float norm2(int iE) {
@@ -109,11 +128,12 @@ public class DecoratedPolygonMesh {
 
 		  try {
 			DecoratedPolygonMesh  pm = new DecoratedPolygonMesh(new PolygonMesh(coord, coordIndex));
-			
+/*			
 			for (int i = 0; i < 6; i++) {
 				System.out.println("edge: " + i + " norm2: " + pm.norm2(i));
 				pm.nomalize(i).dump();
-			}			
+			}
+*/			
 			
 		 } catch (Exception e) {
 			// TODO Auto-generated catch block
