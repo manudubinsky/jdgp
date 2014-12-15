@@ -37,7 +37,7 @@ public class DecoratedPolygonMesh {
 		int faces = _mesh.getNumberOfFaces();
 		_normalizedFacesNormals = new VecFloat(faces * 3);
 		
-		System.out.println("_calculateFacesNormals faces: " + faces);
+		// System.out.println("_calculateFacesNormals faces: " + faces);
 		
 		for (int i = 0; i < faces; i++) {
 			int iC = _mesh.getFaceFirstCorner(i+1);
