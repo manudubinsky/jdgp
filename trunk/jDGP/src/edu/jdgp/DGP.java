@@ -375,6 +375,7 @@ public class DGP extends DGP_h
   2 3 0 -1 # F3
 */
 
+/*
   public static void main(String[] args) {
 	  VecInt coordIndex = new VecInt(20);
 	  coordIndex.pushBack(0);
@@ -412,7 +413,6 @@ public class DGP extends DGP_h
 		iC = f.getNextCorner(iC);
 		System.out.println("getNextCorner: " + iC);
 
-/*
 		System.out.println("vertices: " + f.getNumberOfVertices());
 		System.out.println("faces: " + f.getNumberOfFaces());
 		System.out.println("corners: " + f.getNumberOfCorners());
@@ -432,13 +432,13 @@ public class DGP extends DGP_h
 		System.out.println("getNextCorner(2): " + f.getNextCorner(2));
 		System.out.println("getNextCorner(3): " + f.getNextCorner(3));
 		System.out.println("getNextCorner(4): " + f.getNextCorner(4));
-*/
 	  } catch (Exception e) {
 		e.printStackTrace();
 	  }
   }
 
-  
+*/
+
   public static class Faces implements Faces_h
   {
 	  private int _numVertices;
@@ -1094,4 +1094,69 @@ coordIndex [
 	}
   }
 
+/*
+    1 0 0
+    0 1 0
+    0 0 1
+*/
+  
+  
+  public static void main(String[] args) {
+	  int dim = 3;
+	 SparseMatrix m = new SparseMatrix(dim);
+	 m.set(0, 0, 1);
+	 m.set(1, 1, 1);
+	 m.set(2, 2, 1);
+	 for (int i = 0; i < dim; i++) {
+		 for (int j = 0; j < dim; j++) {
+			 System.out.println("m[" + i + "," +  j + "] = " + m.get(i, j));
+		 }		
+	}
+  }
+  
+  public static class SparseMatrix
+  {
+	  int _rows;
+	  private VecInt[] _colIndices;
+	  private VecFloat[] _values;
+	  
+	  public SparseMatrix(int rows) {
+		  _rows = rows;
+		  _init();
+	  }
+	  
+	  private void _init() {
+		  _colIndices = new VecInt[_rows];
+		  _values = new VecFloat[_rows];
+	  }
+	  
+	  public void set(int row, int col, float value) {
+		  if (_colIndices[row] == null) {
+			  _colIndices[row] = new VecInt(1);
+			  _values[row] = new VecFloat(1);
+		  }
+		  // System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
+		  _colIndices[row].pushBack(col);
+		  _values[row].pushBack(value);
+	  }
+	  
+	  public float get(int row, int col) {
+		  float value = 0;
+		  // System.out.println("get(...) row: " + row + " col: " + col);
+		  if (_colIndices[row] != null) {
+			  // System.out.println("get(...) not null!!! _colIndices[row]: " + _colIndices[row].size());
+			  int colIndex = -1;
+			  // _colIndices[row].dump();
+			  for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
+				  // System.out.println("get(...) _colIndices[row].get(i): " + _colIndices[row].get(i));
+				  if (_colIndices[row].get(i) == col)
+					  colIndex = i;
+			  }
+			  if (colIndex >= 0 )
+				  value = _values[row].get(colIndex);
+		  }
+		  return value;
+	  }
+
+  }
 }
