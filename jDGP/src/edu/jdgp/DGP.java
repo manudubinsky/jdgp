@@ -1104,14 +1104,29 @@ coordIndex [
   public static void main(String[] args) {
 	  int dim = 3;
 	 SparseMatrix m = new SparseMatrix(dim);
-	 m.set(0, 0, 1);
-	 m.set(1, 1, 1);
-	 m.set(2, 2, 1);
+	 m.set(0, 0, 3);
+	 m.set(0, 1, 1);
+	 m.set(1, 1, 3);
+	 m.set(2, 2, 3);
+	 VecFloat v = new VecFloat(3);
+	 v.pushBack(1);
+	 v.pushBack(2);
+	 v.pushBack(3);
+	 VecFloat v2 = m.multiplyByVector(v);
+	 v2.dump();
+	 
+	 /*
+	 m.add(0, 0, 1);
+	 m.add(1, 1, 1);
+	 m.add(2, 2, 1);
+	 m.add(0, 2, 1);
+	 
 	 for (int i = 0; i < dim; i++) {
 		 for (int j = 0; j < dim; j++) {
 			 System.out.println("m[" + i + "," +  j + "] = " + m.get(i, j));
 		 }		
 	}
+	*/
   }
   
   public static class SparseMatrix
@@ -1156,6 +1171,38 @@ coordIndex [
 				  value = _values[row].get(colIndex);
 		  }
 		  return value;
+	  }
+	  
+	  public void add(int row, int col, float value) {
+		  if (_colIndices[row] != null) {			  
+			  float previousValue = 0;
+			  int colIndex = -1;
+			  for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
+				  if (_colIndices[row].get(i) == col)
+					  colIndex = i;
+			  }
+			  if (colIndex >= 0 ) {
+				  previousValue = _values[row].get(colIndex);
+				  _values[row].set(colIndex, previousValue + value);
+			  } else {
+				  set(row, col, value);
+			  }
+		  } else {
+			  set(row, col, value);
+		  }
+		  
+	  }
+	  
+	  public VecFloat multiplyByVector(VecFloat v) {
+		  VecFloat resultVec = new VecFloat(v.size(), 0);		  
+		  for (int i = 0; i < _colIndices.length; i++) {
+			  float value = 0;
+			  for (int j = 0; j < _colIndices[i].size(); j++) {
+				  value += _values[i].get(j) * v.get(_colIndices[i].get(j));
+			  }
+			  resultVec.set(i, value);
+		  }
+		  return resultVec;
 	  }
 
   }
