@@ -2,6 +2,7 @@ package edu.jdgp;
 
 import edu.jdgp.DGP.Graph;
 import edu.jdgp.DGP.PolygonMesh;
+import edu.jdgp.DGP.SparseMatrix;
 import edu.jdgp.DGP.VecFloat;
 import edu.jdgp.DGP.VecInt;
 
@@ -9,22 +10,20 @@ public class SurfaceFlattener {
 	private PolygonMesh _mesh;
 	private Graph _graph;
 	private VecFloat _translatedEdges; //coordenadas de los ejes trasladados al origen 
-	private VecFloat _normalizedFacesNormals;
+	// private VecFloat _normalizedFacesNormals;
 	
 	public SurfaceFlattener(PolygonMesh mesh) throws Exception {
 		_mesh = mesh;
 		_graph = mesh._graph;
-		_translateEdges();
-		_calculateFacesNormals();
+		translateEdges();
 	}
 
-	private void _translateEdges() throws Exception {
-		Graph g = _mesh._graph;
-		int numEdges = g.getNumberOfEdges();
+	private void translateEdges() throws Exception {
+		int numEdges = _graph.getNumberOfEdges();
 		_translatedEdges = new VecFloat(numEdges * 3); // por cada eje trasladado hay 3 coordenadas
 		for (int i = 0; i < numEdges; i++) {
-			int iV0 = g.getVertex0(i);
-			int iV1 = g.getVertex1(i);
+			int iV0 = _graph.getVertex0(i);
+			int iV1 = _graph.getVertex1(i);
 			for (int j = 0; j < 3; j++) {
 				_translatedEdges.pushBack(_mesh.getVertexCoord(iV1, j) - _mesh.getVertexCoord(iV0, j));
 			}
@@ -33,10 +32,10 @@ public class SurfaceFlattener {
 	}
 	
 	// n_f
-	private void _calculateFacesNormals() throws Exception {
+	private VecFloat facesNormals() throws Exception {
 		int iE0, iE1;
 		int faces = _mesh.getNumberOfFaces();
-		_normalizedFacesNormals = new VecFloat(faces * 3);
+		VecFloat normalizedFacesNormals = new VecFloat(faces * 3);
 		
 		// System.out.println("_calculateFacesNormals faces: " + faces);
 		
@@ -57,15 +56,78 @@ public class SurfaceFlattener {
 					_translatedEdges.get(iE0 * 3 + 1) * _translatedEdges.get(iE1 * 3);
 			// System.out.println("iF: " + (i+1) + " iE0: " + iE0 + " iE1: " + iE1 + " coord0: " + coord0 + " coord1: " + coord1 + " coord2: " + coord2);
 			float norm2 = (float)Math.sqrt(Math.pow(coord0, 2) + Math.pow(coord1, 2) + Math.pow(coord2, 2));
-			_normalizedFacesNormals.pushBack(coord0/norm2);
-			_normalizedFacesNormals.pushBack(coord1/norm2);
-			_normalizedFacesNormals.pushBack(coord2/norm2);
+			normalizedFacesNormals.pushBack(coord0/norm2);
+			normalizedFacesNormals.pushBack(coord1/norm2);
+			normalizedFacesNormals.pushBack(coord2/norm2);
 		}
 		// _normalizedFacesNormals.dump();
+		return normalizedFacesNormals;
 	}
 	
 	// d_ij
-	public float norm2(int iE) {
+	private VecFloat edgesNorms() {
+		int numEdges = _graph.getNumberOfEdges();
+		VecFloat edgesNorms = new VecFloat(numEdges);		
+		for (int i = 0; i < numEdges; i++) {
+			float norm = 0;
+			for (int j = 0; j < 3; j++) {
+				float coord = _translatedEdges.get(i * 3 + j);
+				norm += Math.pow(coord, 2);
+			}
+			edgesNorms.pushBack(norm);
+		}
+		return edgesNorms;
+	}
+	
+	// e_ij
+	private VecFloat normalizedEdges() {
+		int numEdges = _graph.getNumberOfEdges();
+		VecFloat normalizedEdges = new VecFloat(numEdges);		
+		for (int i = 0; i < numEdges; i++) {
+			float norm2 = _norm2(i);
+			for (int j = 0; j < 3; j++) {
+				float coord = _translatedEdges.get(i * 3 + j);
+				normalizedEdges.pushBack(coord/norm2);
+			}			
+		}
+		return normalizedEdges;
+	}
+
+	private VecFloat initialValue() {
+		VecFloat initialValue = new VecFloat(_mesh._nV + _mesh.getNumberOfFaces() + _graph.getNumberOfEdges()); // \bar{x},\bar{n},\bar{e}
+		
+		return initialValue;
+	}
+
+	private void m1(SparseMatrix m) {
+		
+	}
+
+	private void m2(SparseMatrix m) {
+		
+	}
+
+	private void m3(SparseMatrix m) {
+		
+	}
+
+	private SparseMatrix gradientMatrix() {
+		SparseMatrix m = new SparseMatrix(_mesh._nV + _mesh.getNumberOfFaces() + _graph.getNumberOfEdges()); // \bar{x},\bar{n},\bar{e}
+		m1(m);
+		m2(m);
+		m3(m);
+		return m;
+	}
+	
+	public void flatten(int iterations) throws Exception {
+		VecFloat currentValue = initialValue();
+		SparseMatrix gradient =  gradientMatrix();
+		for (int i = 0; i < iterations; i++) {
+			currentValue.add(gradient.multiplyByVector(currentValue));
+		}
+	}
+	
+	public float _norm2(int iE) {
 		float norm = 0;
 		for (int i = 0; i < 3; i++) {
 			float coord = _translatedEdges.get(iE * 3 + i);
@@ -73,17 +135,15 @@ public class SurfaceFlattener {
 		}
 		return (float)Math.sqrt(norm);
 	}
-	
-	// e_ij
-	public VecFloat nomalize(int iE) {
+
+	public VecFloat _nomalize(int iE) {
 		VecFloat normalizedEdge = new VecFloat(3);
-		float norm2 = norm2(iE);
+		float norm2 = _norm2(iE);
 		for (int i = 0; i < 3; i++) {
 			float coord = _translatedEdges.get(iE * 3 + i);
 			normalizedEdge.pushBack(coord/norm2);
 		}
-		return normalizedEdge;
-		
+		return normalizedEdge;		
 	}
 	
 	 /*	  
