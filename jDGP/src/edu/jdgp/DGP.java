@@ -53,7 +53,7 @@ public class DGP extends DGP_h
 	}
 
 	private void _resize() {
-		System.out.println("_resize: _vecLen: " + _vecLen);
+		// System.out.println("_resize: _vecLen: " + _vecLen);
 		int[] newVec = new int[_vecLen*2];
 		for (int i = 0; i < _vecLen; i++) {
 			newVec[i] = _vec[i];
@@ -170,7 +170,7 @@ public class DGP extends DGP_h
 	}
 
 	private void _resize() {
-		System.out.println("_resize: _vecLen: " + _vecLen);
+		//System.out.println("_resize: _vecLen: " + _vecLen);
 		float[] newVec = new float[_vecLen*2];
 		for (int i = 0; i < _vecLen; i++) {
 			newVec[i] = _vec[i];
@@ -680,7 +680,8 @@ public class DGP extends DGP_h
 
 	public int getNeighbor(int iV, int iE) {
 		int iV0 = getVertex0(iE);
-		int iV1 = getVertex1(iE);		
+		int iV1 = getVertex1(iE);
+		System.out.println("getNeighbor(" + iV + ", " + iE + ") iV0: " + iV0 + " iV1: " + iV1);
 		return iV == iV0 ? 
 				iV1 : 
 					iV == iV1 ? 
@@ -902,10 +903,10 @@ coordIndex [
 	  }
 	  
 	private void _buildGraph() throws Exception {
-		System.out.println("_buildGraph() begin... _nV: " + _nV);
+		// System.out.println("_buildGraph() begin... _nV: " + _nV);
 		_graph = new Graph(_nV);
 		// para cada Face agregar los ejes en el grafo
-		System.out.println("_buildGraph() num faces: " + getNumberOfFaces());
+		// System.out.println("_buildGraph() num faces: " + getNumberOfFaces());
 		for (int i = 0; i < getNumberOfFaces(); i++) {
 			int faceNum = i+1;
 			int firstCorner = getFaceFirstCorner(faceNum);
@@ -920,7 +921,7 @@ coordIndex [
 			// System.out.println("_buildGraph() insertEdge face: " + i + " firstCorner: " + firstCorner + " currentCorner: " + currentCorner);
 			_insertEdge(faceNum, firstCorner, currentCorner); //agregar el eje del primero al ultimo nodo de la Face
 		}
-		_graph.dump();
+		// _graph.dump();
 	}
 	
 	private void _insertEdge(int iF, int iC0, int iC1) {
@@ -1225,5 +1226,14 @@ coordIndex [
 		  return resultVec;
 	  }
 
+	  public void dump() {
+		  for (int i = 0; i < _rows; i++) {
+			  if (_colIndices[i] != null) {
+				  for (int j = 0; j < _colIndices[i].size(); j++) {
+					  System.out.println("[" + i + "," + _colIndices[i].get(j) + "]: " + _values[i].get(j));
+				  }
+			  }
+		  }
+	  }
   }
 }

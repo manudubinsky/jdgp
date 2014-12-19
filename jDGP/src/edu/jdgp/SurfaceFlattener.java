@@ -76,7 +76,7 @@ public class SurfaceFlattener {
 				float coord = _translatedEdges.get(i * 3 + j);
 				norm += Math.pow(coord, 2);
 			}
-			edgesNorms.pushBack(norm);
+			edgesNorms.pushBack((float)Math.sqrt(norm));
 		}
 		return edgesNorms;
 	}
@@ -121,22 +121,42 @@ public class SurfaceFlattener {
 	$e_{ih}$ tiene el valor $-d_{ih}$ si el eje es del tipo $(i,h)$ y $d_{ih}$ si el eje es del tipo $(h,j)$
 	*/	
 	private void m1(SparseMatrix m, VecFloat edgesNorms) throws Exception {
+		// x_h
+		int e_ijBasis = _graph.getNumberOfVertices() + _mesh.getNumberOfFaces();
 		for (int i = 0; i < _graph.getNumberOfVertices(); i++) {
 			VecInt vertexEdges = _graph.getVertexEdges(i);
-			for (int k = 0; k < 2; k++) { // para cada coordenada x,y,z
+			vertexEdges.dump();
+			for (int k = 0; k < 3; k++) { // para cada coordenada x,y,z
 				m.add(i * 3 + k, i * 3 + k, vertexEdges.size()); // $v_h$ tiene el valor $|h^{*}|$
 			}
 			for (int j = 0; j < vertexEdges.size(); j++) {
-				int neighbor = _graph.getNeighbor(i, j);
+				int iE = vertexEdges.get(j);
+				int neighbor = _graph.getNeighbor(i, iE);
 				if (neighbor != -1) {
-					for (int k = 0; k < 2; k++) { // para cada coordenada x,y,z
+					for (int k = 0; k < 3; k++) { // para cada coordenada x,y,z
 						m.add(i * 3 + k, neighbor * 3 + k, -1); // $v_i$ tiene el valor $-1$ para cada $i \in h^{*}$
-						// e_ih e_hj
+						int edgeIndex = (e_ijBasis + iE) * 3 + k;
+						m.add(i * 3 + k, edgeIndex, (neighbor < i ? -1 : 1) * edgesNorms.get(iE)); // $e_{ih}$ tiene el valor $-d_{ih}$ si el eje es del tipo $(i,h)$ y $d_{ih}$ si el eje es del tipo $(h,j)$						
 					}
 				} else
 					throw new Exception("Invalid neighbor iV: " + i + " iE: " + j);
 			}
 			
+		}
+		
+		// e_ij
+		for (int i = 0; i < _graph.getNumberOfEdges(); i++) {			
+			float edgeNorm = edgesNorms.get(i);
+			int iV0= _graph.getVertex0(i);
+			int iV1= _graph.getVertex1(i);
+			
+			for (int k = 0; k < 3; k++) { // para cada coordenada x,y,z				
+				int row = 3 * (e_ijBasis + i) + k;
+				System.out.println("i: " + i + " k: " + k + " row: " + row);
+				m.add(row, iV0 * 3 + k, edgeNorm); // $v_i$ tiene el valor $d_{ij}$
+				m.add(row, iV1 * 3 + k, - edgeNorm); // $v_j$ tiene el valor $-d_{ij}$
+				m.add(row, row, edgeNorm * edgeNorm); // $e_{ij}$ tiene el valor $d_{ij}^2$
+			}
 		}
 	}
 
@@ -159,8 +179,9 @@ public class SurfaceFlattener {
 	
 	public void flatten(int iterations) throws Exception {
 		VecFloat currentValue = initialValue();
-		currentValue.dump();
+		// currentValue.dump();
 		SparseMatrix gradient =  gradientMatrix();
+		gradient.dump();
 /*
 		for (int i = 0; i < iterations; i++) {
 			currentValue.add(gradient.multiplyByVector(currentValue));
