@@ -1,5 +1,7 @@
 package edu.jdgp;
 
+import java.util.Iterator;
+
 import edu.jdgp.DGP.Graph;
 import edu.jdgp.DGP.PolygonMesh;
 import edu.jdgp.DGP.SparseMatrix;
@@ -93,38 +95,77 @@ public class SurfaceFlattener {
 		return normalizedEdges;
 	}
 
-	private VecFloat initialValue() {
-		VecFloat initialValue = new VecFloat(_mesh._nV + _mesh.getNumberOfFaces() + _graph.getNumberOfEdges()); // \bar{x},\bar{n},\bar{e}
-		
+	private VecFloat initialValue() throws Exception {
+		// System.out.println("initialValue() dim: " + 3 * (_mesh._nV + _mesh.getNumberOfFaces() + _graph.getNumberOfEdges()));
+
+		VecFloat initialValue = new VecFloat(3 * (_mesh._nV + _mesh.getNumberOfFaces() + _graph.getNumberOfEdges())); // \bar{x},\bar{n},\bar{e}
+		for (int i = 0; i < _mesh.getNumberOfVertices(); i++) {
+			for (int j = 0; j < 3; j++) {
+				initialValue.pushBack(_mesh.getVertexCoord(i, j));
+			}
+		}
+		VecFloat faceNormals = facesNormals();
+		for (int i = 0; i < faceNormals.size(); i++) {
+			initialValue.pushBack(faceNormals.get(i));
+		}
+		VecFloat normalizedEdges = normalizedEdges();
+		for (int i = 0; i < normalizedEdges.size(); i++) {
+			initialValue.pushBack(normalizedEdges.get(i));
+		}
 		return initialValue;
 	}
+	
+	/*
+	$v_h$ tiene el valor $|h^{*}|$
+	$v_i$ tiene el valor $-1$ para cada $i \in h^{*}$
+	$e_{ih}$ tiene el valor $-d_{ih}$ si el eje es del tipo $(i,h)$ y $d_{ih}$ si el eje es del tipo $(h,j)$
+	*/	
+	private void m1(SparseMatrix m, VecFloat edgesNorms) throws Exception {
+		for (int i = 0; i < _graph.getNumberOfVertices(); i++) {
+			VecInt vertexEdges = _graph.getVertexEdges(i);
+			for (int k = 0; k < 2; k++) { // para cada coordenada x,y,z
+				m.add(i * 3 + k, i * 3 + k, vertexEdges.size()); // $v_h$ tiene el valor $|h^{*}|$
+			}
+			for (int j = 0; j < vertexEdges.size(); j++) {
+				int neighbor = _graph.getNeighbor(i, j);
+				if (neighbor != -1) {
+					for (int k = 0; k < 2; k++) { // para cada coordenada x,y,z
+						m.add(i * 3 + k, neighbor * 3 + k, -1); // $v_i$ tiene el valor $-1$ para cada $i \in h^{*}$
+						// e_ih e_hj
+					}
+				} else
+					throw new Exception("Invalid neighbor iV: " + i + " iE: " + j);
+			}
+			
+		}
+	}
 
-	private void m1(SparseMatrix m) {
+	private void m2(SparseMatrix m, VecFloat edgesNorms) {
 		
 	}
 
-	private void m2(SparseMatrix m) {
+	private void m3(SparseMatrix m, VecFloat edgesNorms) {
 		
 	}
 
-	private void m3(SparseMatrix m) {
-		
-	}
-
-	private SparseMatrix gradientMatrix() {
-		SparseMatrix m = new SparseMatrix(_mesh._nV + _mesh.getNumberOfFaces() + _graph.getNumberOfEdges()); // \bar{x},\bar{n},\bar{e}
-		m1(m);
-		m2(m);
-		m3(m);
+	private SparseMatrix gradientMatrix() throws Exception {
+		VecFloat edgesNorms = edgesNorms();
+		SparseMatrix m = new SparseMatrix(3 * (_mesh._nV + _mesh.getNumberOfFaces() + _graph.getNumberOfEdges())); // \bar{x},\bar{n},\bar{e}
+		m1(m, edgesNorms);
+		m2(m, edgesNorms);
+		m3(m, edgesNorms);
 		return m;
 	}
 	
 	public void flatten(int iterations) throws Exception {
 		VecFloat currentValue = initialValue();
+		currentValue.dump();
 		SparseMatrix gradient =  gradientMatrix();
+/*
 		for (int i = 0; i < iterations; i++) {
 			currentValue.add(gradient.multiplyByVector(currentValue));
 		}
+*/
 	}
 	
 	public float _norm2(int iE) {
@@ -136,7 +177,7 @@ public class SurfaceFlattener {
 		return (float)Math.sqrt(norm);
 	}
 
-	public VecFloat _nomalize(int iE) {
+	public VecFloat _normalize(int iE) {
 		VecFloat normalizedEdge = new VecFloat(3);
 		float norm2 = _norm2(iE);
 		for (int i = 0; i < 3; i++) {
@@ -191,6 +232,7 @@ public class SurfaceFlattener {
 
 		  try {
 			SurfaceFlattener  pm = new SurfaceFlattener(new PolygonMesh(coord, coordIndex));
+			pm.flatten(10);
 /*			
 			for (int i = 0; i < 6; i++) {
 				System.out.println("edge: " + i + " norm2: " + pm.norm2(i));
