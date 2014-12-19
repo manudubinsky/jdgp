@@ -217,7 +217,7 @@ public class DGP extends DGP_h
 	public void dump() {
 		System.out.println("*****");
 		System.out.println("dump() _vecLen: " + _vecLen + " _size: " + _size);
-		for (int i = 0; i < _vecLen; i++) {
+		for (int i = 0; i < _size; i++) {
 			System.out.print(" " + _vec[i]);
 		}
 		System.out.println("");
@@ -678,6 +678,16 @@ public class DGP extends DGP_h
 		return (0 <= iE && iE < _nE) ? _edges.get(iE * 2 + 1) : -1;
 	}
 
+	public int getNeighbor(int iV, int iE) {
+		int iV0 = getVertex0(iE);
+		int iV1 = getVertex1(iE);		
+		return iV == iV0 ? 
+				iV1 : 
+					iV == iV1 ? 
+							iV0 : 
+								-1;
+	}
+
 	public VecInt getVertexEdges(int iV) {
 		return _vertexEdges[iV];
 	}
@@ -746,6 +756,7 @@ public class DGP extends DGP_h
 			System.out.println(iV0 + " -> " + iV1);
 		}
 	}
+	
   }
 
   //////////////////////////////////////////////////////////////////////
