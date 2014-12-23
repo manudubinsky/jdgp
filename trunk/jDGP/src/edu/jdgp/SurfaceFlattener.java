@@ -177,16 +177,14 @@ public class SurfaceFlattener {
 		return m;
 	}
 	
-	public void flatten(int iterations) throws Exception {
+	public void flatten(int iterations, float lambda) throws Exception {
 		VecFloat currentValue = initialValue();
 		// currentValue.dump();
 		SparseMatrix gradient =  gradientMatrix();
 		gradient.dump();
-/*
 		for (int i = 0; i < iterations; i++) {
-			currentValue.add(gradient.multiplyByVector(currentValue));
+			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
 		}
-*/
 	}
 	
 	public float _norm2(int iE) {
@@ -253,7 +251,7 @@ public class SurfaceFlattener {
 
 		  try {
 			SurfaceFlattener  pm = new SurfaceFlattener(new PolygonMesh(coord, coordIndex));
-			pm.flatten(10);
+			pm.flatten(10, 0.01f);
 /*			
 			for (int i = 0; i < 6; i++) {
 				System.out.println("edge: " + i + " norm2: " + pm.norm2(i));

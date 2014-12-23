@@ -1226,6 +1226,18 @@ coordIndex [
 		  return resultVec;
 	  }
 
+	  public VecFloat multiplyByVectorAndScalar(VecFloat v, float scalar) {
+		  VecFloat resultVec = new VecFloat(v.size(), 0);		  
+		  for (int i = 0; i < _colIndices.length; i++) {
+			  float value = 0;
+			  for (int j = 0; j < _colIndices[i].size(); j++) {
+				  value += _values[i].get(j) * v.get(_colIndices[i].get(j));
+			  }
+			  resultVec.set(i, scalar * value);
+		  }
+		  return resultVec;
+	  }
+
 	  public void dump() {
 		  for (int i = 0; i < _rows; i++) {
 			  if (_colIndices[i] != null) {
