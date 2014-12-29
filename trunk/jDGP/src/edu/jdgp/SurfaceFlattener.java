@@ -1,6 +1,8 @@
 package edu.jdgp;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import edu.jdgp.DGP.Graph;
 import edu.jdgp.DGP.PolygonMesh;
@@ -160,19 +162,57 @@ public class SurfaceFlattener {
 		}
 	}
 
-	private void m2(SparseMatrix m, VecFloat edgesNorms) {
-		
+	private void m2(SparseMatrix m, VecFloat edgesNorms) throws Exception {
+		int n_fBasis = _graph.getNumberOfVertices();
+		int faces = _mesh.getNumberOfFaces();
+		for (int i = 0; i < faces; i++) {
+			VecInt neighbors = _mesh.getFaceNeighbors(i+1);
+			if (neighbors.size() > 0) {
+				for (int k = 0; k < 3; k++) { // para cada coordenada x,y,z	
+					m.add(n_fBasis + i + k, n_fBasis + i + k, neighbors.size()); // $coordenadas de $n_h$ tiene el valor $|h^*|$
+				}
+				for (int j = 0; j < neighbors.size(); j++) {
+					for (int k = 0; k < 3; k++) { // para cada coordenada x,y,z
+						m.add(n_fBasis + i + k, n_fBasis + neighbors.get(j) - 1 + k, -1); // $coordenadas de $n_f$ donde $f \in h^*$ tiene el valor $-1$
+					}
+				}
+			}
+		}
 	}
 
-	private void m3(SparseMatrix m, VecFloat edgesNorms) {
-		
+	private void m3(SparseMatrix m, VecFloat edgesNorms) throws Exception {
+/*
+		int n_fBasis = _graph.getNumberOfVertices();
+		int faces = _mesh.getNumberOfFaces();
+		for (int i = 0; i < faces; i++) {
+			VecInt faceEdges = _mesh.getFaceEdges(i+1);
+			Map<Integer, Float> xCoefficients = new HashMap<Integer, Float>();
+			for (int j = 0; j < faceEdges.size(); j++) {
+				int edge = faceEdges.get(j);
+				float edgeNorm = edgesNorms.get(edge);
+				float coeff = 1/(edgeNorm * edgeNorm); //$d_{ij}^{-2}$
+				int iV0 = _mesh.getVertex0(edge);
+				int iV1 = _mesh.getVertex1(edge);
+				Float iV0Value = xCoefficients.get(iV0);
+				Float iV1Value  = xCoefficients.get(iV1);
+				xCoefficients.put(iV0, iV0Value == null ? -coeff : iV0Value - coeff); //$v_i$ tiene el valor $(-d_{ij}^{-2}$ 
+				xCoefficients.put(iV1, iV1Value == null ? coeff : iV1Value + coeff); //$v_j$ tiene el valor $d_{ij}^{-2}$ 
+			}
+			for (Map.Entry<Integer, Float> entry : xCoefficients.entrySet()) {
+				for (int k = 0; k < 3; k++) {
+					System.out.println("ACA!!!: " + ((n_fBasis + i) * 3 + k) + " " + (3 * entry.getKey() + k));
+					m.add((n_fBasis + i) * 3 + k, 3 * entry.getKey() + k, entry.getValue());	
+				}				 				
+			}
+		}
+*/
 	}
 
 	private SparseMatrix gradientMatrix() throws Exception {
 		VecFloat edgesNorms = edgesNorms();
 		SparseMatrix m = new SparseMatrix(3 * (_mesh._nV + _mesh.getNumberOfFaces() + _graph.getNumberOfEdges())); // \bar{x},\bar{n},\bar{e}
-		m1(m, edgesNorms);
-		m2(m, edgesNorms);
+		//m1(m, edgesNorms);
+		//m2(m, edgesNorms);
 		m3(m, edgesNorms);
 		return m;
 	}
@@ -182,9 +222,11 @@ public class SurfaceFlattener {
 		// currentValue.dump();
 		SparseMatrix gradient =  gradientMatrix();
 		gradient.dump();
+		/*
 		for (int i = 0; i < iterations; i++) {
 			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
 		}
+		*/
 	}
 	
 	public float _norm2(int iE) {
