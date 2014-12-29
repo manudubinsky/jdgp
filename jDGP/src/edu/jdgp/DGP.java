@@ -239,7 +239,16 @@ public class DGP extends DGP_h
 			set(i, value + v.get(i));
 		}
 	}
-	
+
+	public void addMultiple(VecFloat v, float lamda) throws Exception {
+		if (_size != v.size())
+			throw new Exception("Dimensions differ! this.size:" + _size + " v.size: " + v.size());
+		for (int i = 0; i < _size; i++) {
+			float value = get(i);
+			set(i, value + v.get(i) * lamda);
+		}
+	}
+
   }
 
   //////////////////////////////////////////////////////////////////////
