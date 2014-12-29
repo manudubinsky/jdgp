@@ -833,7 +833,7 @@ coordIndex [
        2 3 0 -1 # F3
      ]
   */
-/*
+
   public static void main(String[] args) {
 	  VecFloat coord = new VecFloat(16);
 	  coord.pushBack(1.633f);
@@ -869,18 +869,22 @@ coordIndex [
 
 	  try {
 		PolygonMesh pm = new PolygonMesh(coord, coordIndex);
-		for (int i = 0; i < 6; i++) {
-			System.out.println("edgeFaces edge: " + i + " #edgeFaces: " + pm.getNumberOfEdgeFaces(i));
+		for (int i = 0; i < pm.getNumberOfFaces(); i++) {
+			//pm.getFaceEdges(i+1).dump();
+			pm.getFaceNeighbors(i+1).dump();
 		}
-		System.out.println("isRegular?: " + pm.isRegular());
-		System.out.println("hasBoundary?: " + pm.hasBoundary());
+		
+//		for (int i = 0; i < 6; i++) {
+//			System.out.println("edgeFaces edge: " + i + " #edgeFaces: " + pm.getNumberOfEdgeFaces(i));
+//		}
+//		System.out.println("isRegular?: " + pm.isRegular());
+//		System.out.println("hasBoundary?: " + pm.hasBoundary());
 		
 	 } catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
   }
-*/
   
   public static class PolygonMesh
     extends Faces implements PolygonMesh_h
@@ -1113,6 +1117,31 @@ coordIndex [
 	public boolean isSingularEdge(int iE) throws Exception {
 		return _edgeFaces.get(iE).size() > 2;
 	}
+	
+	public VecInt getFaceEdges(int iF) throws Exception {
+		VecInt edges = new VecInt(3);
+		int totalEdges = getFaceSize(iF);
+		int iC = getFaceFirstCorner(iF);
+		for (int i = 0; i < totalEdges; i++) {
+			edges.pushBack(getEdge(iC));
+			iC = getNextCorner(iC);
+		}
+		return edges;
+	}
+	public VecInt getFaceNeighbors(int iF) throws Exception {
+		VecInt neighbors = new VecInt(3);
+		VecInt faceEdges = getFaceEdges(iF); 
+		for (int i = 0; i < faceEdges.size(); i++) {
+			int edge = faceEdges.get(i);
+			for (int j = 0; j < _edgeFaces.get(edge).size(); j++) {
+				int face = _edgeFaces.get(edge).get(j);
+				if (face != iF) {
+					neighbors.pushBack(face);
+				}
+			}
+		}
+		return neighbors;
+	}
   }
 
 /*
@@ -1121,7 +1150,7 @@ coordIndex [
     0 0 1
 */
   
-  
+ /* 
   public static void main(String[] args) {
 	  int dim = 3;
 	 SparseMatrix m = new SparseMatrix(dim);
@@ -1136,7 +1165,6 @@ coordIndex [
 	 VecFloat v2 = m.multiplyByVector(v);
 	 v2.dump();
 	 
-	 /*
 	 m.add(0, 0, 1);
 	 m.add(1, 1, 1);
 	 m.add(2, 2, 1);
@@ -1147,9 +1175,8 @@ coordIndex [
 			 System.out.println("m[" + i + "," +  j + "] = " + m.get(i, j));
 		 }		
 	}
-	*/
   }
-  
+*/  
   public static class SparseMatrix
   {
 	  int _rows;
@@ -1195,23 +1222,24 @@ coordIndex [
 	  }
 	  
 	  public void add(int row, int col, float value) {
-		  if (_colIndices[row] != null) {			  
-			  float previousValue = 0;
-			  int colIndex = -1;
-			  for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
-				  if (_colIndices[row].get(i) == col)
-					  colIndex = i;
-			  }
-			  if (colIndex >= 0 ) {
-				  previousValue = _values[row].get(colIndex);
-				  _values[row].set(colIndex, previousValue + value);
+		  if (value > 0.0000001f || value < -0.0000001f) {
+			  if (_colIndices[row] != null) {			  
+				  float previousValue = 0;
+				  int colIndex = -1;
+				  for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
+					  if (_colIndices[row].get(i) == col)
+						  colIndex = i;
+				  }
+				  if (colIndex >= 0 ) {
+					  previousValue = _values[row].get(colIndex);
+					  _values[row].set(colIndex, previousValue + value);
+				  } else {
+					  set(row, col, value);
+				  }
 			  } else {
 				  set(row, col, value);
 			  }
-		  } else {
-			  set(row, col, value);
 		  }
-		  
 	  }
 	  
 	  public VecFloat multiplyByVector(VecFloat v) {
