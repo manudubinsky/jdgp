@@ -154,6 +154,7 @@ public class SurfaceFlattener2 {
 			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
 			currentValue.addMultiple(unitaryNormalsCondition(currentValue), lambda);
 		}
+		currentValue.dump();
 	}
 
 	  /*	  
@@ -171,7 +172,7 @@ public class SurfaceFlattener2 {
   ]
 */
 
-public static void main(String[] args) {
+	public static void main(String[] args) {
 	  VecFloat coord = new VecFloat(16);
 	  coord.pushBack(1.633f);
 	  coord.pushBack(-0.943f);
@@ -202,7 +203,7 @@ public static void main(String[] args) {
 
 		  try {
 			SurfaceFlattener2  pm = new SurfaceFlattener2(new PolygonMesh(coord, coordIndex));
-			pm.flatten(500, -0.01f);
+			pm.flatten(200, -0.01f);
 /*			
 			for (int i = 0; i < 6; i++) {
 				System.out.println("edge: " + i + " norm2: " + pm.norm2(i));
@@ -214,6 +215,6 @@ public static void main(String[] args) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	  }
+	}
 
 }
