@@ -690,7 +690,7 @@ public class DGP extends DGP_h
 	public int getNeighbor(int iV, int iE) {
 		int iV0 = getVertex0(iE);
 		int iV1 = getVertex1(iE);
-		System.out.println("getNeighbor(" + iV + ", " + iE + ") iV0: " + iV0 + " iV1: " + iV1);
+		//System.out.println("getNeighbor(" + iV + ", " + iE + ") iV0: " + iV0 + " iV1: " + iV1);
 		return iV == iV0 ? 
 				iV1 : 
 					iV == iV1 ? 
@@ -942,6 +942,7 @@ coordIndex [
 		int iV0 = _coordIndex.get(iC0);
 		int iV1 = _coordIndex.get(iC1);
 		int edge = _graph.insertEdge(iV0, iV1);
+		// System.out.println("_insertEdge() iF: " + iF + " iV0: " + iV0 + " iV1:" + iV1 + " edge: " + edge);
 		if (edge == -1) {
 			edge = _graph.getEdge(iV0, iV1);
 		}		
@@ -1267,8 +1268,10 @@ coordIndex [
 		  VecFloat resultVec = new VecFloat(v.size(), 0);		  
 		  for (int i = 0; i < _colIndices.length; i++) {
 			  float value = 0;
-			  for (int j = 0; j < _colIndices[i].size(); j++) {
-				  value += _values[i].get(j) * v.get(_colIndices[i].get(j));
+			  if (_colIndices[i] != null) {
+				  for (int j = 0; j < _colIndices[i].size(); j++) {
+					  value += _values[i].get(j) * v.get(_colIndices[i].get(j));
+				  }
 			  }
 			  resultVec.set(i, scalar * value);
 		  }

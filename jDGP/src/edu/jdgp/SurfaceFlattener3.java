@@ -91,7 +91,7 @@ public class SurfaceFlattener3 {
 		int e_ijBasis = _graph.getNumberOfVertices();
 		for (int i = 0; i < _graph.getNumberOfVertices(); i++) {
 			VecInt vertexEdges = _graph.getVertexEdges(i);
-			vertexEdges.dump();
+			// vertexEdges.dump();
 			for (int k = 0; k < 3; k++) { // para cada coordenada x,y,z
 				m.add(i * 3 + k, i * 3 + k, vertexEdges.size()); // $v_h$ tiene el valor $|h^{*}|$
 			}
@@ -118,7 +118,7 @@ public class SurfaceFlattener3 {
 			
 			for (int k = 0; k < 3; k++) { // para cada coordenada x,y,z				
 				int row = 3 * (e_ijBasis + i) + k;
-				System.out.println("i: " + i + " k: " + k + " row: " + row);
+				//System.out.println("i: " + i + " k: " + k + " row: " + row);
 				m.add(row, iV0 * 3 + k, edgeNorm); // $v_i$ tiene el valor $d_{ij}$
 				m.add(row, iV1 * 3 + k, - edgeNorm); // $v_j$ tiene el valor $-d_{ij}$
 				m.add(row, row, edgeNorm * edgeNorm); // $e_{ij}$ tiene el valor $d_{ij}^2$
@@ -133,9 +133,10 @@ public class SurfaceFlattener3 {
 			for (int j = 0; j < edges.size(); j++) {
 				int iE = edges.get(j);				
 				int iV0 = _mesh.getVertex0(iE);
-				int iV1 = _mesh.getVertex1(iE);				
+				int iV1 = _mesh.getVertex1(iE);
 				for (int k = 0; k < 3; k++) {
 					float absValue = _facesNormals.get(3*i+k)/edgesNorms.get(iE);
+					//float absValue = _facesNormals.get(3*i+k);
 					absValue *= absValue;
 					m.add(3 * iV0 + k, 3 * iV0 + k, absValue);
 					m.add(3 * iV0 + k, 3 * iV1 + k, -absValue);
@@ -154,18 +155,114 @@ public class SurfaceFlattener3 {
 		return m;
 	}
 
+	private float sqrNorm2(int iF, VecFloat currentValue) {
+		int index = 3 * iF;
+		float norm = currentValue.get(index) * currentValue.get(index) +
+					currentValue.get(index+1) * currentValue.get(index+1) +
+						currentValue.get(index+2) * currentValue.get(index+2);
+		return norm;
+	}
+	
+	// considero el gradiente de la condicion que preserva las normas de los e_ij: $\sum_{(i,j) \in E} (||e_{ij}||^2-1)^2$ 
+	private VecFloat unitaryCondition(VecFloat currentValue) {
+		VecFloat gradient = new VecFloat(currentValue.size(), 0);
+		int e_ijBasis = _graph.getNumberOfVertices();
+		int edges = _graph.getNumberOfEdges();
+		for (int i = 0; i < edges; i++) {
+			for (int j = 0; j < 3; j++) {
+				float norm = sqrNorm2(e_ijBasis + i,currentValue);
+				//System.out.println("e_ijBasis + i: " + e_ijBasis + i + " norm: " + norm);
+				gradient.set(3 * (e_ijBasis + i) + j,
+								(norm - 1) * 2 * currentValue.get(3 * (e_ijBasis + i) + j));
+			}
+		}
+		return gradient;
+	}
+
+	// n_f
+	private VecFloat facesNormals(VecFloat translatedEdges) throws Exception {
+		int iE0, iE1;
+		int faces = _mesh.getNumberOfFaces();
+		VecFloat normalizedFacesNormals = new VecFloat(faces * 3);
+		
+		// System.out.println("_calculateFacesNormals faces: " + faces);
+		
+		for (int i = 0; i < faces; i++) {
+			int iC = _mesh.getFaceFirstCorner(i+1);
+			iE0 = _mesh.getEdge(iC);
+			iE1 = _mesh.getEdge(_mesh.getNextCorner(iC));
+			float coord0 = translatedEdges.get(iE0 * 3 + 1) * translatedEdges.get(iE1 * 3 + 2) - 
+					translatedEdges.get(iE0 * 3 + 2) * translatedEdges.get(iE1 * 3 + 1);
+			float coord1 = translatedEdges.get(iE0 * 3 + 2) * translatedEdges.get(iE1 * 3) - 
+					translatedEdges.get(iE0 * 3) * translatedEdges.get(iE1 * 3 + 2);
+			float coord2 = translatedEdges.get(iE0 * 3) * _translatedEdges.get(iE1 * 3 + 1) - 
+					translatedEdges.get(iE0 * 3 + 1) * translatedEdges.get(iE1 * 3);
+			// System.out.println("iF: " + (i+1) + " iE0: " + iE0 + " iE1: " + iE1 + " coord0: " + coord0 + " coord1: " + coord1 + " coord2: " + coord2);
+			float norm2 = (float)Math.sqrt(Math.pow(coord0, 2) + Math.pow(coord1, 2) + Math.pow(coord2, 2));
+			normalizedFacesNormals.pushBack(coord0/norm2);
+			normalizedFacesNormals.pushBack(coord1/norm2);
+			normalizedFacesNormals.pushBack(coord2/norm2);
+		}
+		// _normalizedFacesNormals.dump();
+		return normalizedFacesNormals;
+	}
+
+	private void stats(int step, VecFloat currentValue) throws Exception {
+		int edges = _graph.getNumberOfEdges();
+		System.out.println("**********************************************************************");
+		System.out.println("Step: " + step);
+		VecFloat edgesNorms = edgesNorms();
+		VecFloat translatedEdges = new VecFloat(3*edges, 0);
+		for (int i = 0; i < edges; i++) {			
+			System.out.println("****************");			
+			int iV0 = _mesh.getVertex0(i);
+			int iV1 = _mesh.getVertex1(i);
+			System.out.println("edge: " + i + " iV0: " + iV0 + " iV1: " + iV1);
+			float norm = 0;
+			for (int j = 0; j < 3; j++) {
+				norm += Math.pow(currentValue.get(3 * iV1 + j) - currentValue.get(3 * iV0 + j), 2);
+			}
+			norm = (float)Math.sqrt(norm);
+			for (int j = 0; j < 3; j++) {
+				translatedEdges.set(3*i+j, currentValue.get(3 * iV1 + j) - currentValue.get(3 * iV0 + j)/norm);
+			}
+			System.out.println("edge: " + i + " original: " + edgesNorms.get(i) + " current: " + norm + " diff: " + (edgesNorms.get(i) - norm));
+		}
+		int faces = _mesh.getNumberOfFaces();
+		VecFloat faceNormals = facesNormals(translatedEdges);		
+		for (int i = 0; i < faces; i++) {
+			System.out.println("****************");
+			float innerProd = 0;
+			for (int j = 0; j < 3; j++) {
+				innerProd += faceNormals.get(3*i+j) * _facesNormals.get(3*i+j);
+			}
+			System.out.println("face: " + i + " alfa: " + 180 * Math.acos(innerProd)/Math.PI);
+			/*
+			float norm = 0;
+			float normalNorm = 0;
+			for (int j = 0; j < 3; j++) {
+				normalNorm += Math.pow(faceNormals.get(3*i+j),2);
+				norm += Math.pow(faceNormals.get(3*i+j) - _facesNormals.get(3*i+j),2);
+			}
+			norm = (float)Math.sqrt(norm);
+			normalNorm = (float)Math.sqrt(normalNorm);
+			System.out.println("face: " + i + " norm: " + norm + " normalNorm: " + normalNorm);
+			*/
+		}
+	}
+
 	public void flatten(int iterations, float lambda) throws Exception {
 		VecFloat currentValue = initialValue();
 		// currentValue.dump();
 		SparseMatrix gradient =  gradientMatrix();
-		gradient.dump();
-		/*
+		
+		// unitaryCondition(currentValue);
+		//gradient.dump();
 		for (int i = 0; i < iterations; i++) {
-			// stats(i, currentValue);
+			stats(i, currentValue);
 			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
-			// currentValue.addMultiple(unitaryNormalsCondition(currentValue), lambda);
+			//currentValue.addMultiple(unitaryCondition(currentValue), lambda);
 		}
-		*/
 	}
 
 	  /*	  
@@ -226,7 +323,7 @@ public class SurfaceFlattener3 {
 	  
 		  try {
 			SurfaceFlattener3  pm = new SurfaceFlattener3(new PolygonMesh(coord, coordIndex),normals);
-			pm.flatten(500, -0.01f);
+			pm.flatten(100, -0.01f);
 /*			
 			for (int i = 0; i < 6; i++) {
 				System.out.println("edge: " + i + " norm2: " + pm.norm2(i));
