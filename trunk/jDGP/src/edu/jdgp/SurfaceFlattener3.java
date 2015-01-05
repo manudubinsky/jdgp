@@ -135,13 +135,13 @@ public class SurfaceFlattener3 {
 				int iV0 = _mesh.getVertex0(iE);
 				int iV1 = _mesh.getVertex1(iE);
 				for (int k = 0; k < 3; k++) {
-					float absValue = _facesNormals.get(3*i+k)/edgesNorms.get(iE);
-					//float absValue = _facesNormals.get(3*i+k);
-					absValue *= absValue;
-					m.add(3 * iV0 + k, 3 * iV0 + k, absValue);
-					m.add(3 * iV0 + k, 3 * iV1 + k, -absValue);
-					m.add(3 * iV1 + k, 3 * iV1 + k, absValue);
-					m.add(3 * iV1 + k, 3 * iV0 + k, -absValue);
+					float coef = _facesNormals.get(3*i+k)/(float)Math.pow(edgesNorms.get(iE),2); // d_{ij}^{-2} * n_f
+					for (int l = 0; l < 3; l++) {
+						m.add(3 * iV0 + k, 3 * iV0 + l, coef * _facesNormals.get(3*i+l));
+						m.add(3 * iV0 + k, 3 * iV1 + l, - coef * _facesNormals.get(3*i+l));
+						m.add(3 * iV1 + k, 3 * iV0 + l, - coef * _facesNormals.get(3*i+l));
+						m.add(3 * iV1 + k, 3 * iV1 + l, coef * _facesNormals.get(3*i+l));
+					}
 				}				
 			}
 		}
@@ -150,7 +150,7 @@ public class SurfaceFlattener3 {
 	private SparseMatrix gradientMatrix() throws Exception {
 		VecFloat edgesNorms = edgesNorms();
 		SparseMatrix m = new SparseMatrix(3 * (_mesh._nV + _graph.getNumberOfEdges()));
-		// m1(m, edgesNorms);
+		m1(m, edgesNorms);
 		m2(m, edgesNorms);
 		return m;
 	}
@@ -261,7 +261,7 @@ public class SurfaceFlattener3 {
 		for (int i = 0; i < iterations; i++) {
 			stats(i, currentValue);
 			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
-			//currentValue.addMultiple(unitaryCondition(currentValue), lambda);
+			currentValue.addMultiple(unitaryCondition(currentValue), lambda);
 		}
 	}
 
