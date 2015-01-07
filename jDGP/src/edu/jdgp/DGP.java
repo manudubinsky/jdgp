@@ -900,7 +900,7 @@ coordIndex [
   {
 	  protected int _nV;
 	  protected Graph _graph;
-	  private VecFloat _coord;
+	  protected VecFloat _coord;
 	  private Vector<VecInt> _edgeFaces; // le asocia a cada eje sus Faces incidentes
 	  private static final int BOUNDARY_TYPE = 1;
 	  private static final int SINGULAR_TYPE = 2;
