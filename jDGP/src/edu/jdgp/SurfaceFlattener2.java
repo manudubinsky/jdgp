@@ -145,13 +145,14 @@ public class SurfaceFlattener2 {
 	}
 	
 	public void flatten(int iterations, float lambda) throws Exception {
+		_mesh._coord.dump();
 		VecFloat currentValue = initialValue();
 		// currentValue.dump();
 		SparseMatrix gradient =  gradientMatrix();
 		// gradient.dump();
 		for (int i = 0; i < iterations; i++) {
-			stats(i, currentValue);
-			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
+			//stats(i, currentValue);
+			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));			
 			currentValue.addMultiple(unitaryNormalsCondition(currentValue), lambda);
 		}
 		currentValue.dump();

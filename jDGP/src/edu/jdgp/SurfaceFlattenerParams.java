@@ -28,6 +28,15 @@ public class SurfaceFlattenerParams {
 	}
 
 	public boolean hasToContinue() {
-		return (++currentIter == maxIter);
+		return (currentIter++ < maxIter);
+	}
+
+	public int getCurrentIter() {
+		return currentIter;
+	}
+
+	public SurfaceFlattenerParams reset(){
+		currentIter = 0;
+		return this;
 	}
 }

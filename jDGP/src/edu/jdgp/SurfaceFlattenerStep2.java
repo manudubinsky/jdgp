@@ -105,7 +105,7 @@ public class SurfaceFlattenerStep2 {
 	}
 
 	// considero el gradiente de la condicion que preserva las normas de los e_ij: $\sum_{(i,j) \in E} (||e_{ij}||^2-1)^2$ 
-	private VecFloat cannonicalVectorsUnitaryCondition(VecFloat currentValue) {
+	private VecFloat cannonicalVectorsUnitaryCondition(VecFloat currentValue) {		
 		Graph g = _mesh._graph;
 		VecFloat gradient = new VecFloat(currentValue.size(), 0);
 		int e_ijBasis = g.getNumberOfVertices();
@@ -121,16 +121,18 @@ public class SurfaceFlattenerStep2 {
 		return gradient;
 	}
 
-	public VecFloat execute(PolygonMesh mesh, VecFloat facesNormals, SurfaceFlattenerParams params) throws Exception {
+	public VecFloat execute(PolygonMesh mesh, VecFloat facesNormals, SurfaceFlattenerParams params) throws Exception {		
 		init(mesh, facesNormals);
-		VecFloat vertexes = initialValue();
+		VecFloat currentValue = initialValue();
 		SparseMatrix gradient =  linearConditions();
 		float lambda = params.getLambda();
 		while (params.hasToContinue()) {
-			vertexes.add(gradient.multiplyByVectorAndScalar(vertexes, lambda));
-			vertexes.addMultiple(cannonicalVectorsUnitaryCondition(vertexes), lambda);
-		}
-		return vertexes;
+			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
+			//currentValue.dump("step 2 add " + params.getCurrentIter());
+			currentValue.addMultiple(cannonicalVectorsUnitaryCondition(currentValue), lambda);
+			//currentValue.dump("step 2 addMultiple " + params.getCurrentIter());
+		}		
+		return currentValue.head(3 * _mesh.getNumberOfVertices());
 	}
 
 }
