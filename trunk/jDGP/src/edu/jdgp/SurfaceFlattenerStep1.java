@@ -62,6 +62,7 @@ public class SurfaceFlattenerStep1 {
 	}
 
 	public VecFloat execute(PolygonMesh mesh, SurfaceFlattenerParams params) throws Exception {
+		// mesh._coord.dump("ACA!!!");
 		init(mesh);
 		VecFloat facesNormals = initialValue();
 		SparseMatrix gradient =  linearCondition();

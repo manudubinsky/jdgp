@@ -253,16 +253,18 @@ public class SurfaceFlattener3 {
 
 	public void flatten(int iterations, float lambda) throws Exception {
 		VecFloat currentValue = initialValue();
-		// currentValue.dump();
+		//currentValue.dump("flatten inicio");
 		SparseMatrix gradient =  gradientMatrix();
-		
 		// unitaryCondition(currentValue);
-		//gradient.dump();
+		// gradient.dump("flatten");
 		for (int i = 0; i < iterations; i++) {
-			stats(i, currentValue);
+			// stats(i, currentValue);
 			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
+			//currentValue.dump("flatten add " + i);
 			currentValue.addMultiple(unitaryCondition(currentValue), lambda);
+			//currentValue.dump("flatten addMultiple " + i);
 		}
+		currentValue.head(3 * _mesh.getNumberOfVertices()).dump();;
 	}
 
 	  /*	  
@@ -282,6 +284,7 @@ public class SurfaceFlattener3 {
 
 	public static void main(String[] args) {
 	  VecFloat coord = new VecFloat(16);
+	  /*
 	  coord.pushBack(1.633f);
 	  coord.pushBack(-0.943f);
 	  coord.pushBack(-0.667f);
@@ -294,7 +297,20 @@ public class SurfaceFlattener3 {
 	  coord.pushBack(0.000f);
 	  coord.pushBack(1.886f);
 	  coord.pushBack(-0.667f);
-	   
+	  */
+	  coord.pushBack(1.2793144f);
+	  coord.pushBack(-0.7388112f);
+	  coord.pushBack(-0.76849765f);
+	  coord.pushBack(-0.13254187f);
+	  coord.pushBack(0.076517984f);
+	  coord.pushBack(1.9999473f);
+	  coord.pushBack(-1.4055943f);
+	  coord.pushBack(-1.1105351f);
+	  coord.pushBack(-0.61622584f);
+	  coord.pushBack(0.2588222f);
+	  coord.pushBack(1.772827f);
+	  coord.pushBack(-0.6162233f);
+	  
 	  VecInt coordIndex = new VecInt(20);
 	  coordIndex.pushBack(0);
 	  coordIndex.pushBack(1);
@@ -310,6 +326,8 @@ public class SurfaceFlattener3 {
 	  coordIndex.pushBack(-1);
 
 	  VecFloat normals = new VecFloat(9);
+
+	  /*
 	  normals.pushBack(0.84899485f);
 	  normals.pushBack(-0.49361727f);
 	  normals.pushBack( 0.18519874f);
@@ -319,8 +337,18 @@ public class SurfaceFlattener3 {
 	  normals.pushBack(0.8509167f);
 	  normals.pushBack(-0.4912525f);
 	  normals.pushBack(0.18270037f);
-	  
-	  
+	   */
+
+	  normals.pushBack(0.8406203f);
+	  normals.pushBack( -0.48795635f);
+	  normals.pushBack(0.2335702f);
+	  normals.pushBack(0.84290475f);
+	  normals.pushBack(-0.48399943f);
+	  normals.pushBack(0.23356996f);
+	  normals.pushBack(0.842139f);
+	  normals.pushBack(-0.48619482f);
+	  normals.pushBack(0.23178948f);
+
 		  try {
 			SurfaceFlattener3  pm = new SurfaceFlattener3(new PolygonMesh(coord, coordIndex),normals);
 			pm.flatten(100, -0.01f);

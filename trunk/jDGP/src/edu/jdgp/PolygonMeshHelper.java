@@ -108,7 +108,7 @@ public class PolygonMeshHelper {
 	}
 
 	public static float norm2(int vecIdx, VecFloat vecSet) {
-		return (float)sqrNorm2(vecIdx, vecSet);
+		return (float)Math.sqrt(sqrNorm2(vecIdx, vecSet));
 	}
 	
 	public static float sqrNorm2(int vecIdx, VecFloat vecSet) {

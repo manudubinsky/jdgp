@@ -224,6 +224,16 @@ public class DGP extends DGP_h
 		System.out.println("*****");
 	}
 
+	public void dump(String tag) {
+		System.out.println("*****");
+		System.out.println(tag + " dump() _vecLen: " + _vecLen + " _size: " + _size);
+		for (int i = 0; i < _size; i++) {
+			System.out.print(" " + _vec[i]);
+		}
+		System.out.println("");
+		System.out.println("*****");
+	}
+
 	public void init(float initValue) {
 		_reset();
 		for (int i = 0; i < _vecLen; i++) {
@@ -249,6 +259,26 @@ public class DGP extends DGP_h
 		}
 	}
 
+	private boolean inRange(int index) {
+		return (index >= 0 && index < _size);
+	}
+	
+	// devuelve el subvector: [from,from+count-1]
+	public VecFloat subVec(int from, int count) throws Exception {		
+		if (!inRange(from) || !inRange(from + count - 1))
+			throw new Exception("Not in range. _size: " + _size + " from: " + from + " count: " + count + " (from+count-1): " + (from+count-1));
+		VecFloat subVec = new VecFloat(count);
+		for (int i = from; i < from+count; i++) {
+			subVec.pushBack(get(i));
+		}
+		return subVec;
+	}
+	
+	// descarta los elementos del final. conserva los elementos [0,pos-1] 
+	public VecFloat head(int pos){
+		_size = pos;
+		return this;
+	}
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -1287,5 +1317,16 @@ coordIndex [
 			  }
 		  }
 	  }
+	  
+	  public void dump(String tag) {
+		  for (int i = 0; i < _rows; i++) {
+			  if (_colIndices[i] != null) {
+				  for (int j = 0; j < _colIndices[i].size(); j++) {
+					  System.out.println(tag + " [" + i + "," + _colIndices[i].get(j) + "]: " + _values[i].get(j));
+				  }
+			  }
+		  }
+	  }
+
   }
 }
