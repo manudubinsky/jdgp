@@ -115,6 +115,7 @@ public class JDGP
     jdgp.addDesktopPanel(new J3DPanelNodes(jdgp),"NODES");
     jdgp.addDesktopPanel(new J3DPanelDgp(jdgp),"DGP");
     jdgp.addDesktopPanel(new J3DPanelIsoCurves(jdgp),"ISOCURVES");
+    jdgp.addDesktopPanel(new J3DPanelFlattening(jdgp),"FLATTENING");
 
     // TODO Mon Sep 23 13:18:38 2013
     // white two seconds until the gui is created
