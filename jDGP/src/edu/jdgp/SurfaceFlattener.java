@@ -64,6 +64,7 @@ public class SurfaceFlattener {
 			statsEdges(paramsMain.getCurrentIter());
 			//_mesh._coord.dump();
 		}
+		_mesh._coord.dump("ACA!!!");
 	}
 
 	public static void main(String[] args) {

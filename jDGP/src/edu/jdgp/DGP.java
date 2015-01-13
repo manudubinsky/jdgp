@@ -115,6 +115,15 @@ public class DGP extends DGP_h
 			pushBack(initValue);
 		}
 	}
+	
+	public static VecInt fromWrlVecInt(mesh.VecInt v) {
+		int size = v.size();
+		VecInt convertedVec = new VecInt(size);
+		for (int i = 0; i < size; i++) {
+			convertedVec.pushBack(v.get(i));
+		}
+		return convertedVec;
+	}
   }
 
 /*
@@ -279,6 +288,25 @@ public class DGP extends DGP_h
 		_size = pos;
 		return this;
 	}
+
+	public static VecFloat fromWrlVecFloat(mesh.VecFloat v) {
+		int size = v.size();
+		VecFloat convertedVec = new VecFloat(size);
+		for (int i = 0; i < size; i++) {
+			convertedVec.pushBack(v.get(i));
+		}
+		return convertedVec;
+	}
+
+	public static mesh.VecFloat toWrlVecFloat(VecFloat v) {
+		int size = v.size();
+		mesh.VecFloat convertedVec = new mesh.VecFloat(size);
+		for (int i = 0; i < size; i++) {
+			convertedVec.pushBack(v.get(i));
+		}
+		return convertedVec;
+	}
+
   }
 
   //////////////////////////////////////////////////////////////////////
