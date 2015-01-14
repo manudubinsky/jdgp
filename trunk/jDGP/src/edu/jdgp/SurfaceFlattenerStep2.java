@@ -131,7 +131,7 @@ public class SurfaceFlattenerStep2 {
 			//currentValue.dump("step 2 add " + params.getCurrentIter());
 			currentValue.addMultiple(cannonicalVectorsUnitaryCondition(currentValue), lambda);
 			//currentValue.dump("step 2 addMultiple " + params.getCurrentIter());
-		}		
+		}
 		return currentValue.head(3 * _mesh.getNumberOfVertices());
 	}
 
