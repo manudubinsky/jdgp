@@ -307,6 +307,13 @@ public class DGP extends DGP_h
 		return convertedVec;
 	}
 
+	public static void toWrlVecFloat(VecFloat src, mesh.VecFloat target) {
+		int size = src.size();
+		for (int i = 0; i < size; i++) {
+			target.set(i, src.get(i));
+		}
+	}
+
   }
 
   //////////////////////////////////////////////////////////////////////

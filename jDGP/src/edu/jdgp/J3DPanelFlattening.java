@@ -104,7 +104,8 @@ public class J3DPanelFlattening
 																					_step1Lambda,
 																					_step2Lambda);
 							try {
-								//flattener.flatten(faceSet);
+								
+								flattener.flatten(faceSet);
 							} catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -129,11 +130,14 @@ public class J3DPanelFlattening
     	  _step2Iter = _parseInt(_textField_STEP2_ITER.getText().trim(),10);
     	  _step1Lambda = _parseFloat(_textField_STEP1_LAMBDA.getText().trim(),0.01f);
     	  _step2Lambda = _parseFloat(_textField_STEP2_LAMBDA.getText().trim(),0.01f);
+    	  /*
     	  _log("_step1Iter: " + _step1Iter + 
     			  " _step2Iter: " + _step2Iter + 
     			  " _algorithmIter: " + _algorithmIter + 
     			  " _step1Lambda: " + _step1Lambda +
     			  " _step2Lambda: " + _step2Lambda);
+    		*/
+    	  _execute();
           _desktop.updateState();
           _desktop.render();
       }      
