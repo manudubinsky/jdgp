@@ -16,10 +16,10 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 
 import panels.J3DPanel;
-import wrl.WrlCoordinate;
 import wrl.WrlIndexedFaceSet;
 import wrl.WrlNode;
 import wrl.WrlSceneGraph;
+import wrl.WrlSelection;
 
 public class J3DPanelFlattening
   extends    J3DPanel
@@ -49,7 +49,8 @@ public class J3DPanelFlattening
   private TextField  _textField_STEP2_ITER      = null;
   private TextField  _textField_STEP2_LAMBDA    = null;
 
-  private Button           _button_EXECUTE       = null;
+  private Button     _button_EXECUTE            = null;
+  private Button     _button_SAVE_SELECTION     = null;
 
   public J3DPanelFlattening(J3DDesktop desktop) {
     super(desktop);
@@ -68,6 +69,7 @@ public class J3DPanelFlattening
     _textField_STEP2_LAMBDA    = newTextField("",this,this);
 
     _button_EXECUTE = newButton("EXECUTE",this,this);
+    _button_SAVE_SELECTION = newButton("SAVE SELECTION",this,this);
 
     updateText();
   }
@@ -118,6 +120,30 @@ public class J3DPanelFlattening
 
   }
 
+  /*
+VecInt       getVertexIndex();
+VecInt       getEdgeIndex();
+VecInt       getFaceIndex();
+VecInt       getPolylineIndex();
+int          getNumberOfVertices();
+int          getNumberOfEdges();
+int          getNumberOfFaces();
+int          getNumberOfPolylines();
+int          getNumberOfShapes(); 
+   */
+  private void _saveSelection() {
+	  WrlSceneGraph wrl = _desktop.getWrl();
+	  if (wrl.hasSelection()) {
+		  WrlSelection sel = wrl.getSelection();
+		  System.out.println("#vertices: " + sel.getNumberOfVertices() +
+			  					" #edges: " + sel.getNumberOfEdges() +
+								" #faces: " + sel.getNumberOfFaces() +
+								" #polylines: " + sel.getNumberOfPolylines() +
+								" #shapes: " + sel.getNumberOfShapes());
+
+	  }
+  }
+  
   // implements ActionListener
   public void actionPerformed(ActionEvent e)
   {
@@ -140,7 +166,9 @@ public class J3DPanelFlattening
     	  _execute();
           _desktop.updateState();
           _desktop.render();
-      }      
+      } else if(src==_button_SAVE_SELECTION) {
+    	  _saveSelection();
+      }
     }
   }  
 
@@ -213,6 +241,11 @@ public class J3DPanelFlattening
           
     _button_EXECUTE.setLocation(x0,y);
     _button_EXECUTE.setSize(w0,rowHeight);
+
+    y += rowHeight+_rowSpace;
+
+    _button_SAVE_SELECTION.setLocation(x0,y);
+    _button_SAVE_SELECTION.setSize(w0,rowHeight);
 
     y += rowHeight+_rowSpace;
 
