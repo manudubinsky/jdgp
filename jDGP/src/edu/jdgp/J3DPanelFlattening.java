@@ -15,6 +15,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 
+import mesh.MeshFaces;
+import mesh.VecFloat;
+import mesh.VecInt;
 import panels.J3DPanel;
 import wrl.WrlIndexedFaceSet;
 import wrl.WrlNode;
@@ -82,7 +85,8 @@ public class J3DPanelFlattening
     _textField_STEP2_LAMBDA.setText("  "+_step2Lambda);
   }
   
-  private void _execute() {
+  private WrlIndexedFaceSet _getIndexedFaceSet() {
+	  WrlIndexedFaceSet faceSet = null;
 		java.util.Vector<WrlNode> localVector2 = new java.util.Vector<WrlNode>();
 		localVector2.addElement(_desktop.getWrl());
 		
@@ -99,25 +103,30 @@ public class J3DPanelFlattening
 						wrl.WrlShape localWrlShape = (wrl.WrlShape)localWrlNode;
 						localWrlNode = localWrlShape.getGeometry();
 						if ((localWrlNode instanceof WrlIndexedFaceSet)) {
-							WrlIndexedFaceSet faceSet = (WrlIndexedFaceSet)localWrlNode;
-							WrlSurfaceFlattener flattener = new WrlSurfaceFlattener(_step1Iter,
-																					_step2Iter,
-																					_algorithmIter,
-																					_step1Lambda,
-																					_step2Lambda);
-							try {
-								
-								flattener.flatten(faceSet);
-							} catch (Exception e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+							faceSet = (WrlIndexedFaceSet)localWrlNode;
 						}
 					}
 				}
 			}
+		}	  
+	  return faceSet;
+  }
+  
+  private void _execute() {
+		WrlIndexedFaceSet faceSet = _getIndexedFaceSet();
+		if (faceSet != null) {
+			WrlSurfaceFlattener flattener = new WrlSurfaceFlattener(_step1Iter,
+					_step2Iter,
+					_algorithmIter,
+					_step1Lambda,
+					_step2Lambda);
+			try {			
+				flattener.flatten(faceSet);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}			
 		}
-
   }
 
   /*
@@ -135,12 +144,58 @@ int          getNumberOfShapes();
 	  WrlSceneGraph wrl = _desktop.getWrl();
 	  if (wrl.hasSelection()) {
 		  WrlSelection sel = wrl.getSelection();
+		  WrlIndexedFaceSet faceSet = _getIndexedFaceSet();
+		 /*
 		  System.out.println("#vertices: " + sel.getNumberOfVertices() +
 			  					" #edges: " + sel.getNumberOfEdges() +
 								" #faces: " + sel.getNumberOfFaces() +
 								" #polylines: " + sel.getNumberOfPolylines() +
 								" #shapes: " + sel.getNumberOfShapes());
-
+ 		 */
+		  int[] selectedFaces = sel.getSelectedFaces();
+		  MeshFaces faces = faceSet.getFaces();
+		  DGP.VecInt selectedVertices = new DGP.VecInt(sel.getNumberOfVertices(),0);
+		  // System.out.println("ACA!!!" + selectedVertices.size());
+		  for (int i = 0; i < selectedFaces.length; i++) {
+			  //System.out.println(i);
+			  if (selectedFaces[i] == 0) {
+				  int faceLen = faces.getNumberOfFaceIndices(i);
+				  for (int j = 0; j < faceLen; j++) {
+					  selectedVertices.set(faces.getFaceCoordIndex(i, j), 1);
+				  }
+				  
+			  }
+		  }
+		  // selectedVertices.dump();
+		  VecFloat coord = faceSet.getCoordValue();
+		  System.out.println("coord Coordinate { point [");
+		  DGP.VecInt remapIndex = new DGP.VecInt(sel.getNumberOfVertices(), 0);
+		  int totalSelectedVertices = 0;
+		  for (int i = 0; i < selectedVertices.size(); i++) {
+			  if (selectedVertices.get(i) == 1) {
+				  System.out.println(coord.get(3 * i) + " " + 
+						  					coord.get(3 * i + 1) + " " + 
+						  					coord.get(3 * i + 2));
+				  // System.out.println("ACA: " + totalSelectedVertices + " " + i);
+				  remapIndex.set(i,totalSelectedVertices);
+				  totalSelectedVertices++;
+			  }
+		  }
+		  System.out.println("] }");
+		  System.out.println("coordIndex [");
+		  for (int i = 0; i < selectedFaces.length; i++) {
+			  if (selectedFaces[i] == 0) {
+				  int faceLen = faces.getNumberOfFaceIndices(i);
+				  StringBuffer s = new StringBuffer();
+				  // System.out.println(i + " " + faceLen);
+				  for (int j = 0; j < faceLen; j++) {
+					  s.append(remapIndex.get(faces.getFaceCoordIndex(i, j)) + " ");
+				  }
+				  System.out.println(s);
+			  }
+		  }
+		  System.out.println("] }");
+		  
 	  }
   }
   
