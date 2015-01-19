@@ -1,0 +1,17 @@
+#VRML V2.0 utf8
+
+# Produced by Deep Exploration VRML exporter
+# Deep Exploration 3.5.9.1158
+# http://www.righthemisphere.com/
+
+DEF object0 Transform {
+children [
+Shape {
+geometry IndexedFaceSet {
+#ACA
+
+
+}
+}
+]
+}

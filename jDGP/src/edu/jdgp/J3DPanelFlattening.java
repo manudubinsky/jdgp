@@ -33,11 +33,11 @@ public class J3DPanelFlattening
     System.err.println("J3DPanelFlattening | "+s);
   }
 
-  private int        _algorithmIter             = 100;
-  private int        _step1Iter                 = 10;
-  private int        _step2Iter                 = 10;
-  private float      _step1Lambda               = 0.01f;
-  private float      _step2Lambda               = 0.01f;
+  private int        _algorithmIter             = 10;
+  private int        _step1Iter                 = 1;
+  private int        _step2Iter                 = 1;
+  private float      _step1Lambda               = 0.1f;
+  private float      _step2Lambda               = 0.1f;
   
   private Label      _label_FLATTENING          = null;
   private Label      _label_ALGORITHM_ITER      = null;
@@ -191,10 +191,10 @@ int          getNumberOfShapes();
 				  for (int j = 0; j < faceLen; j++) {
 					  s.append(remapIndex.get(faces.getFaceCoordIndex(i, j)) + " ");
 				  }
-				  System.out.println(s);
+				  System.out.println(s + "-1");
 			  }
 		  }
-		  System.out.println("] }");
+		  System.out.println("]");
 		  
 	  }
   }
