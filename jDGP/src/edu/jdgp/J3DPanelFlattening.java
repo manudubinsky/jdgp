@@ -5,6 +5,7 @@ package edu.jdgp;
 //  Time-stamp: <2013-09-24 13:27:37 taubin>
 //------------------------------------------------------------------------
 
+import edu.jdgp.DGP.PolygonMesh;
 import gui.J3DDesktop;
 
 import java.awt.Button;
@@ -54,6 +55,13 @@ public class J3DPanelFlattening
 
   private Button     _button_EXECUTE            = null;
   private Button     _button_SAVE_SELECTION     = null;
+  private Button     _button_MAX_MIN_NORM       = null;
+  private Button     _button_SCALE              = null;
+  private Button     _button_START_EXECUTE      = null;
+  private Button     _button_STOP_EXECUTE            = null;
+  private Float max;
+  private Float min;
+  private boolean controlFlag;
 
   public J3DPanelFlattening(J3DDesktop desktop) {
     super(desktop);
@@ -72,8 +80,12 @@ public class J3DPanelFlattening
     _textField_STEP2_LAMBDA    = newTextField("",this,this);
 
     _button_EXECUTE = newButton("EXECUTE",this,this);
+    _button_START_EXECUTE = newButton("START EXECUTE",this,this);
+    _button_STOP_EXECUTE = newButton("STOP EXECUTE",this,this);
     _button_SAVE_SELECTION = newButton("SAVE SELECTION",this,this);
-
+    _button_MAX_MIN_NORM = newButton("MAX MIN NORM",this,this);
+    _button_SCALE = newButton("SCALE",this,this);
+    
     updateText();
   }
 
@@ -199,6 +211,88 @@ int          getNumberOfShapes();
 	  }
   }
   
+  private void _calculateMaxMinNorm() {
+	  WrlSceneGraph wrl = _desktop.getWrl();
+	  if (wrl.hasSelection()) {
+		  WrlIndexedFaceSet faceSet = _getIndexedFaceSet();
+		  try {
+			PolygonMesh mesh = new PolygonMesh(DGP.VecFloat.fromWrlVecFloat(faceSet.getCoordValue()), DGP.VecInt.fromWrlVecInt(faceSet.getCoordIndex()));
+			DGP.VecFloat norms = PolygonMeshHelper.edgesNorms(mesh);
+			int maxIndex = -1;
+			int minIndex = -1;
+			max = null;
+			min = null;
+			for (int i = 0; i < norms.size(); i++) {
+				if (max == null || max < norms.get(i)) {
+					max = norms.get(i);
+					maxIndex = i;
+				}
+				if (min == null || min > norms.get(i)) {
+					min = norms.get(i);
+					minIndex = i;
+				}				
+			}
+			System.out.println("min index: " + minIndex +
+								" min norm: " + min + 
+								" max index: " + maxIndex + 
+								" max norm: " + max);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	  }	  
+  }
+
+  private void _executeContinuosly() {
+	  	
+		WrlIndexedFaceSet faceSet = _getIndexedFaceSet();
+		if (faceSet != null) {
+				controlFlag = true;
+				new Thread()
+				{
+				    public void run() {
+						WrlIndexedFaceSet faceSet = _getIndexedFaceSet();
+						WrlSurfaceFlattener flattener = new WrlSurfaceFlattener(_step1Iter,
+								_step2Iter,
+								_algorithmIter,
+								_step1Lambda,
+								_step2Lambda);
+
+						try {
+							while (controlFlag) {
+								flattener.flatten(faceSet);
+						          _desktop.updateState();
+						          _desktop.render();								
+							    try {
+							        Thread.sleep(100);
+							      } catch (InterruptedException e) {
+							        // e.printStackTrace();
+							      }
+							}
+							
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}						
+				    }
+				}.start();				
+		}
+  }
+
+  private void _scale() {
+	  WrlSceneGraph wrl = _desktop.getWrl();
+	  if (wrl.hasSelection()) {
+		  WrlIndexedFaceSet faceSet = _getIndexedFaceSet();
+		  _calculateMaxMinNorm();
+		  float scaleFactor = 1/(min*10);
+		  VecFloat coords = faceSet.getCoordValue();
+		  for (int i = 0; i < coords.size(); i++) {
+			  float value = coords.get(i);
+			  coords.set(i,scaleFactor * value);
+		  }
+	  }	  
+  }
+  
   // implements ActionListener
   public void actionPerformed(ActionEvent e)
   {
@@ -223,6 +317,22 @@ int          getNumberOfShapes();
           _desktop.render();
       } else if(src==_button_SAVE_SELECTION) {
     	  _saveSelection();
+      } else if(src==_button_MAX_MIN_NORM) {
+    	  _calculateMaxMinNorm();
+      }  else if(src==_button_SCALE) {
+    	  _scale();
+          _desktop.updateState();
+          _desktop.render();
+      } else if(src==_button_START_EXECUTE) {
+    	  _algorithmIter = _parseInt(_textField_ALGORITHM_ITER.getText().trim(),100);
+    	  _step1Iter = _parseInt(_textField_STEP1_ITER.getText().trim(),10);
+    	  _step2Iter = _parseInt(_textField_STEP2_ITER.getText().trim(),10);
+    	  _step1Lambda = _parseFloat(_textField_STEP1_LAMBDA.getText().trim(),0.01f);
+    	  _step2Lambda = _parseFloat(_textField_STEP2_LAMBDA.getText().trim(),0.01f);
+
+    	  _executeContinuosly();
+      } else if(src==_button_STOP_EXECUTE) {
+    	  controlFlag = false;
       }
     }
   }  
@@ -301,6 +411,26 @@ int          getNumberOfShapes();
 
     _button_SAVE_SELECTION.setLocation(x0,y);
     _button_SAVE_SELECTION.setSize(w0,rowHeight);
+
+    y += rowHeight+_rowSpace;
+
+    _button_MAX_MIN_NORM.setLocation(x0,y);
+    _button_MAX_MIN_NORM.setSize(w0,rowHeight);
+
+    y += rowHeight+_rowSpace;
+
+    _button_SCALE.setLocation(x0,y);
+    _button_SCALE.setSize(w0,rowHeight);
+
+    y += rowHeight+_rowSpace;
+
+    _button_START_EXECUTE.setLocation(x0,y);
+    _button_START_EXECUTE.setSize(w0,rowHeight);
+
+    y += rowHeight+_rowSpace;
+
+    _button_STOP_EXECUTE.setLocation(x0,y);
+    _button_STOP_EXECUTE.setSize(w0,rowHeight);
 
     y += rowHeight+_rowSpace;
 
