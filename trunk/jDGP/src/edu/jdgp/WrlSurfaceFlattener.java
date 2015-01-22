@@ -22,7 +22,7 @@ public class WrlSurfaceFlattener {
 	
 	public void flatten(WrlIndexedFaceSet wrl) throws Exception {
 		PolygonMesh _mesh = new PolygonMesh(VecFloat.fromWrlVecFloat(wrl.getCoordValue()), VecInt.fromWrlVecInt(wrl.getCoordIndex()));
-		_mesh._coord.dump("begin");
+		// _mesh._coord.dump("begin");
 		SurfaceFlattenerStep1 step1 = new SurfaceFlattenerStep1(); // modificar las normales a las caras
 		SurfaceFlattenerStep2 step2 = new SurfaceFlattenerStep2(); // modificar los nodos de acuerdo a las normales del step1
 		SurfaceFlattenerParams paramsMain = new SurfaceFlattenerParams(-1, _algorithmIter);
@@ -32,7 +32,7 @@ public class WrlSurfaceFlattener {
 			VecFloat facesNormals = step1.execute(_mesh, paramsStep1.reset());
 			_mesh._coord = step2.execute(_mesh, facesNormals, paramsStep2.reset());
 		}
-		_mesh._coord.dump("end");
+		// _mesh._coord.dump("end");
 		VecFloat.toWrlVecFloat(_mesh._coord, wrl.getCoordValue());
 	}
 

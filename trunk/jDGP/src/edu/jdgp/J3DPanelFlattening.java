@@ -264,7 +264,7 @@ int          getNumberOfShapes();
 						          _desktop.updateState();
 						          _desktop.render();								
 							    try {
-							        Thread.sleep(100);
+							        Thread.sleep(1);
 							      } catch (InterruptedException e) {
 							        // e.printStackTrace();
 							      }
