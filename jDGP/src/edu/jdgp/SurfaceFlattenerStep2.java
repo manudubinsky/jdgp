@@ -99,7 +99,7 @@ public class SurfaceFlattenerStep2 {
 	private SparseMatrix linearConditions() throws Exception {
 		VecFloat edgesNorms = PolygonMeshHelper.edgesNorms(_mesh, _translatedEdges);
 		SparseMatrix m = new SparseMatrix(3 * (_mesh._nV + _mesh._graph.getNumberOfEdges()));
-		//edgesNormsCondition(m, edgesNorms);
+		edgesNormsCondition(m, edgesNorms);
 		normalsOrthogonalityCondition(m, edgesNorms);
 		return m;
 	}
@@ -129,7 +129,7 @@ public class SurfaceFlattenerStep2 {
 		while (params.hasToContinue()) {
 			currentValue.add(gradient.multiplyByVectorAndScalar(currentValue, lambda));
 			//currentValue.dump("step 2 add " + params.getCurrentIter());
-			//currentValue.addMultiple(cannonicalVectorsUnitaryCondition(currentValue), lambda);
+			currentValue.addMultiple(cannonicalVectorsUnitaryCondition(currentValue), lambda);
 			//currentValue.dump("step 2 addMultiple " + params.getCurrentIter());
 		}
 		return currentValue.head(3 * _mesh.getNumberOfVertices());
