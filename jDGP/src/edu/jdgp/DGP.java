@@ -513,6 +513,7 @@ public class DGP extends DGP_h
 			return -1;
 	}
 
+	
 	public int join(int i, int j) {
 		// obtengo los representates de las particiones de i y j
 		int minSizePart = find(i);
