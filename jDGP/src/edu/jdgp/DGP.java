@@ -336,7 +336,6 @@ public class DGP extends DGP_h
 	}
   }
 */
-
   public static class Partition implements Partition_h
   { /*
 		La implementacion la hago con dos estructuras:
@@ -429,6 +428,124 @@ public class DGP extends DGP_h
 			sb.append(" " + _emptyParts.get(i));
 		}
 		System.out.println(sb);
+	}
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  public static void main(String[] args) {
+	  try {
+		PartitionUnionFind p = new PartitionUnionFind(10);
+		p.dump();
+		System.out.println("(0,1)");
+		p.join(0,1);
+		p.dump();
+		System.out.println("(1,2)");
+		p.join(1,2);
+		p.dump();
+		System.out.println("(3,4)");
+		p.join(3,4);
+		p.dump();
+		System.out.println("(4,5)");
+		p.join(4,5);
+		p.dump();
+		System.out.println("(5,6)");
+		p.join(5,6);		
+		p.dump();
+		System.out.println("(6,7)");
+		p.join(6,7);		
+		p.dump();
+		System.out.println("(6,8)");
+		p.join(6,8);		
+		p.dump();
+		System.out.println("(7,9)");
+		p.join(7,9);		
+		p.dump();
+		System.out.println("(5,1)");
+		p.join(5,1);		
+		p.dump();
+		System.out.println(p.find(0));
+		p.dump();
+	} catch (Exception e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+  }
+
+  public static class PartitionUnionFind implements Partition_h
+  {
+	  private int[] _elems;
+	  private int[] _partSizes;
+	  private int _numElems;
+	  private int _numParts;	  
+	  
+	  public PartitionUnionFind(int n) throws Exception {
+		  reset(n);
+	  }
+	  
+	public void reset(int n) throws Exception {
+		_numElems = n;
+		_numParts = n;
+		_elems = new int[n];
+		_partSizes = new int[n];
+		for (int i = 0; i < _elems.length; i++) {
+			_elems[i] = i;
+			_partSizes[i] = 1;
+		}
+	}
+
+	public int getNumberOfElements() {
+		return _numElems;
+	}
+
+	public int getNumberOfParts() {
+		return _numParts;
+	}
+
+	public int find(int i) {
+		if (i >= 0 && i < _numElems)
+			if (_elems[_elems[i]] == _elems[i]) { // si tiene bien seteado el representante de la particion (ie.: la raiz del arbol)
+				return _elems[i];
+			} else {
+				_elems[i] = find(_elems[i]); //le asigno el representante de la particion a toda la rama
+				return _elems[i];				
+			}
+		else
+			return -1;
+	}
+
+	public int join(int i, int j) {
+		// obtengo los representates de las particiones de i y j
+		int minSizePart = find(i);
+		int maxSizePart = find(j);
+		if (minSizePart != maxSizePart) { // si no estan en la misma particion...
+			if (_partSizes[minSizePart] > _partSizes[maxSizePart]) { // si estan al reves, los invierto  
+				int aux = minSizePart;
+				minSizePart = maxSizePart;
+				maxSizePart = aux;
+			}
+			_elems[minSizePart] = maxSizePart;
+			_partSizes[maxSizePart] += _partSizes[minSizePart];
+			_numParts--;
+		}
+		return maxSizePart;
+	}
+
+	public int getSize(int i) {
+		if (i >= 0 && i < _numElems)
+			return _partSizes[i];
+		else
+			return 0;
+	}
+
+	public void dump(){
+		System.out.println("_numParts: " + _numParts);
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("elems: "); 
+		for (int i = 0; i < _elems.length; i++) {
+			sb.append(" " + i + " = " + _elems[i] + " ");
+		}
+		System.out.println(sb);		
 	}
   }
 
@@ -907,7 +1024,7 @@ coordIndex [
        2 3 0 -1 # F3
      ]
   */
-
+/*
   public static void main(String[] args) {
 	  VecFloat coord = new VecFloat(16);
 	  coord.pushBack(1.633f);
@@ -959,7 +1076,7 @@ coordIndex [
 		e.printStackTrace();
 	}
   }
-  
+*/  
   public static class PolygonMesh
     extends Faces implements PolygonMesh_h
   {
