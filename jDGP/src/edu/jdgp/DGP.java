@@ -432,6 +432,7 @@ public class DGP extends DGP_h
   }
 
   //////////////////////////////////////////////////////////////////////
+/*
   public static void main(String[] args) {
 	  try {
 		PartitionUnionFind p = new PartitionUnionFind(10);
@@ -470,7 +471,8 @@ public class DGP extends DGP_h
 		e.printStackTrace();
 	}
   }
-
+*/
+  
   public static class PartitionUnionFind implements Partition_h
   {
 	  private int[] _elems;
@@ -549,7 +551,74 @@ public class DGP extends DGP_h
 		System.out.println(sb);		
 	}
   }
-
+  //////////////////////////////////////////////////////////////////////
+  public static void main(String[] args) throws Exception {
+	Graph g = new Graph(4);	  
+	g.insertEdge(0, 1);
+	g.insertEdge(0, 2);
+	g.insertEdge(0, 3);
+	g.insertEdge(1, 2);
+	g.insertEdge(1, 3);
+	g.insertEdge(2, 3);
+	SpanningTree s = new SpanningTree(g);
+	s.getTree().dump();;
+  }
+  
+  public static class SpanningTree {
+	  private SparseMatrix _spannigTree;
+	  private VecInt _vertex2Label;
+	  private VecInt _label2Vertex;
+	  int _nV, _nE, _label;
+	  
+	  public SpanningTree (Graph graph) throws Exception {
+		  _label = 0;
+		  _nV = graph.getNumberOfVertices();
+		  _nE = graph.getNumberOfEdges();		  
+		  _vertex2Label = new VecInt(_nV,-1);
+		  _label2Vertex = new VecInt(_nV,-1);
+		  _spannigTree = new SparseMatrix(_nE);
+		  build(graph);
+	  }
+	  
+	  private void addVertex(int iV) {
+		  if (_vertex2Label.get(iV) == -1) {
+			  _vertex2Label.set(iV, _label);
+			  _label2Vertex.set(_label, iV);
+			  _label++;
+		  }
+	  }
+	  
+	  private void build(Graph graph) throws Exception {
+		  PartitionUnionFind unionFind = new PartitionUnionFind(_nV);
+		  int edgeIdx = 0;
+		  int iE = 0;
+		  while (unionFind.getNumberOfParts() > 1) {
+			  int v0 = graph.getVertex0(iE);
+			  int v1 = graph.getVertex1(iE);
+			  if (unionFind.find(v0) != unionFind.find(v1)) {
+			  // particiones distintas => agregar el eje al arbol generador
+				  unionFind.join(v0, v1);
+				  addVertex(v0);
+				  addVertex(v1);
+				  int minLabel, maxLabel;
+				  if (_vertex2Label.get(v0) < _vertex2Label.get(v1)) {
+					  minLabel = _vertex2Label.get(v0);
+					  maxLabel = _vertex2Label.get(v1);
+				  } else {
+					  minLabel = _vertex2Label.get(v1);
+					  maxLabel = _vertex2Label.get(v0);					  
+				  }
+				  _spannigTree.add(edgeIdx, minLabel, -1);
+				  _spannigTree.add(edgeIdx, maxLabel, 1);
+				  edgeIdx++;
+			  }
+			  iE++;
+		  }
+	  }
+	  public SparseMatrix getTree () {
+		  return _spannigTree;
+	  }
+  }
   //////////////////////////////////////////////////////////////////////
   public class SplittablePartition
     extends Partition implements SplittablePartition_h
