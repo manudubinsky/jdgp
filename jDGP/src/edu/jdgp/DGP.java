@@ -515,7 +515,14 @@ public class DGP extends DGP_h
 			return -1;
 	}
 
-	
+	public boolean hasToJoin(int i, int j) {
+		// obtengo los representates de las particiones de i y j
+		int iPart = find(i);
+		int jPart = find(j);
+		int joinPart = join(i,j);
+		return (iPart != joinPart) || (jPart != joinPart);
+	}
+
 	public int join(int i, int j) {
 		// obtengo los representates de las particiones de i y j
 		int minSizePart = find(i);
@@ -556,7 +563,7 @@ public class DGP extends DGP_h
 	Graph g = new Graph(4);	  
 	g.insertEdge(0, 1);
 	g.insertEdge(0, 2);
-	g.insertEdge(0, 3);
+	// g.insertEdge(0, 3);
 	g.insertEdge(1, 2);
 	g.insertEdge(1, 3);
 	g.insertEdge(2, 3);
@@ -580,41 +587,52 @@ public class DGP extends DGP_h
 		  build(graph);
 	  }
 	  
-	  private void addVertex(int iV) {
+	  private boolean addVertex(int iV) {
+		  boolean addVertex = false;
 		  if (_vertex2Label.get(iV) == -1) {
 			  _vertex2Label.set(iV, _label);
 			  _label2Vertex.set(_label, iV);
 			  _label++;
+			  addVertex = true;
 		  }
+		  return addVertex;
 	  }
 	  
+	  private int minLabel(int v0, int v1) {
+		  return _vertex2Label.get(v0) < _vertex2Label.get(v1) ? _vertex2Label.get(v0) : _vertex2Label.get(v1);
+	  }
+
+	  private int maxLabel(int v0, int v1) {
+		  return _vertex2Label.get(v0) > _vertex2Label.get(v1) ? _vertex2Label.get(v0) : _vertex2Label.get(v1);
+	  }
+
 	  private void build(Graph graph) throws Exception {
 		  PartitionUnionFind unionFind = new PartitionUnionFind(_nV);
 		  int edgeIdx = 0;
-		  int iE = 0;
-		  while (unionFind.getNumberOfParts() > 1) {
-			  int v0 = graph.getVertex0(iE);
-			  int v1 = graph.getVertex1(iE);
-			  if (unionFind.find(v0) != unionFind.find(v1)) {
-			  // particiones distintas => agregar el eje al arbol generador
-				  unionFind.join(v0, v1);
-				  addVertex(v0);
-				  addVertex(v1);
-				  int minLabel, maxLabel;
-				  if (_vertex2Label.get(v0) < _vertex2Label.get(v1)) {
-					  minLabel = _vertex2Label.get(v0);
-					  maxLabel = _vertex2Label.get(v1);
-				  } else {
-					  minLabel = _vertex2Label.get(v1);
-					  maxLabel = _vertex2Label.get(v0);					  
+		  int vertexIdx = 0;
+		  VecInt vertexes = new VecInt(_nV);
+		  vertexes.pushBack(0);
+		  addVertex(0);
+		  while (vertexIdx < vertexes.size() && unionFind.getNumberOfParts() > 1) {
+			  int v = vertexes.get(vertexIdx++);
+			  VecInt vertexEdges = graph.getVertexEdges(v);
+			  for (int j = 0; j < vertexEdges.size() && unionFind.getNumberOfParts() > 1; j++) {
+				  int neighbor = graph.getNeighbor(v, j);
+				  System.out.println("v: " + v + " neighbor: " + neighbor);
+				  if (neighbor >= 0 && unionFind.hasToJoin(v, neighbor)) { // particiones distintas => agregar el eje al arbol generador
+					System.out.println("entre!");
+						  if (addVertex(neighbor))  // vertice aun no visitado, agregar a la lista
+							  vertexes.pushBack(neighbor);
+						  _spannigTree.add(edgeIdx, minLabel(v,neighbor), -1);
+						  _spannigTree.add(edgeIdx, maxLabel(v,neighbor), 1);
+						  edgeIdx++;
 				  }
-				  _spannigTree.add(edgeIdx, minLabel, -1);
-				  _spannigTree.add(edgeIdx, maxLabel, 1);
-				  edgeIdx++;
 			  }
-			  iE++;
+			  System.out.println("vertexIdx: " + vertexIdx);
+			  vertexes.dump();
 		  }
 	  }
+	  
 	  public SparseMatrix getTree () {
 		  return _spannigTree;
 	  }
@@ -942,7 +960,7 @@ public class DGP extends DGP_h
 	public int getNeighbor(int iV, int iE) {
 		int iV0 = getVertex0(iE);
 		int iV1 = getVertex1(iE);
-		//System.out.println("getNeighbor(" + iV + ", " + iE + ") iV0: " + iV0 + " iV1: " + iV1);
+		System.out.println("getNeighbor(" + iV + ", " + iE + ") iV0: " + iV0 + " iV1: " + iV1);
 		return iV == iV0 ? 
 				iV1 : 
 					iV == iV1 ? 
