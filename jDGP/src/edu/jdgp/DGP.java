@@ -563,12 +563,17 @@ public class DGP extends DGP_h
 	Graph g = new Graph(4);	  
 	g.insertEdge(0, 1);
 	g.insertEdge(0, 2);
-	// g.insertEdge(0, 3);
+	//g.insertEdge(0, 3);
 	g.insertEdge(1, 2);
 	g.insertEdge(1, 3);
 	g.insertEdge(2, 3);
 	SpanningTree s = new SpanningTree(g);
-	s.getTree().dump();;
+	SparseMatrix m = s.getTree();
+	m.fullDump();
+	System.out.println("******************");
+	m.resize(g.getNumberOfEdges());
+	m.fullDump();
+	s.getTreeEdges().dump();
   }
   
   public static class SpanningTree {
@@ -576,6 +581,7 @@ public class DGP extends DGP_h
 	  private VecInt _vertex2Label;
 	  private VecInt _label2Vertex;
 	  int _nV, _nE, _label;
+	  private VecInt _treeEdges;
 	  
 	  public SpanningTree (Graph graph) throws Exception {
 		  _label = 0;
@@ -583,7 +589,8 @@ public class DGP extends DGP_h
 		  _nE = graph.getNumberOfEdges();		  
 		  _vertex2Label = new VecInt(_nV,-1);
 		  _label2Vertex = new VecInt(_nV,-1);
-		  _spannigTree = new SparseMatrix(_nE);
+		  _treeEdges = new VecInt(_nV-1);
+		  _spannigTree = new SparseMatrix(_nV-1);		  
 		  build(graph);
 	  }
 	  
@@ -617,24 +624,34 @@ public class DGP extends DGP_h
 			  int v = vertexes.get(vertexIdx++);
 			  VecInt vertexEdges = graph.getVertexEdges(v);
 			  for (int j = 0; j < vertexEdges.size() && unionFind.getNumberOfParts() > 1; j++) {
-				  int neighbor = graph.getNeighbor(v, j);
-				  System.out.println("v: " + v + " neighbor: " + neighbor);
+				  int edge = vertexEdges.get(j);
+				  int neighbor = graph.getNeighbor(v, edge);
 				  if (neighbor >= 0 && unionFind.hasToJoin(v, neighbor)) { // particiones distintas => agregar el eje al arbol generador
-					System.out.println("entre!");
 						  if (addVertex(neighbor))  // vertice aun no visitado, agregar a la lista
 							  vertexes.pushBack(neighbor);
 						  _spannigTree.add(edgeIdx, minLabel(v,neighbor), -1);
 						  _spannigTree.add(edgeIdx, maxLabel(v,neighbor), 1);
 						  edgeIdx++;
+						  _treeEdges.pushBack(edge);
 				  }
 			  }
-			  System.out.println("vertexIdx: " + vertexIdx);
-			  vertexes.dump();
 		  }
 	  }
 	  
 	  public SparseMatrix getTree () {
 		  return _spannigTree;
+	  }
+	  
+	  public int label2Vertex(int label) {
+		  return _label2Vertex.get(label);
+	  }
+	  
+	  public int vertex2Label(int iV) {
+		  return _vertex2Label.get(iV);
+	  }
+
+	  public VecInt getTreeEdges() {
+		  return _treeEdges;
 	  }
   }
   //////////////////////////////////////////////////////////////////////
@@ -960,7 +977,6 @@ public class DGP extends DGP_h
 	public int getNeighbor(int iV, int iE) {
 		int iV0 = getVertex0(iE);
 		int iV1 = getVertex1(iE);
-		System.out.println("getNeighbor(" + iV + ", " + iE + ") iV0: " + iV0 + " iV1: " + iV1);
 		return iV == iV0 ? 
 				iV1 : 
 					iV == iV1 ? 
@@ -1460,6 +1476,7 @@ coordIndex [
   public static class SparseMatrix
   {
 	  int _rows;
+	  int _cols;
 	  private VecInt[] _colIndices;
 	  private VecFloat[] _values;
 	  
@@ -1481,6 +1498,8 @@ coordIndex [
 		  // System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
 		  _colIndices[row].pushBack(col);
 		  _values[row].pushBack(value);
+		  if (_cols < col)
+			  _cols = col;
 	  }
 	  
 	  public float get(int row, int col) {
@@ -1548,6 +1567,43 @@ coordIndex [
 		  return resultVec;
 	  }
 
+	  public void resize(int rows) {
+		  VecInt[] newColIndices = new VecInt[rows];
+		  VecFloat[] newValues = new VecFloat[rows];
+		  for (int i = 0; i < _colIndices.length; i++) {
+			  int rowSize = _colIndices[i].size();
+			  newColIndices[i] = new VecInt(rowSize, -1);
+			  newValues[i] = new VecFloat(rowSize, -1);
+			  for (int j = 0; j < rowSize; j++) {
+				  newColIndices[i].set(j, _colIndices[i].get(j));
+				  newValues[i].set(j, _values[i].get(j));
+			  }
+		  }
+		  _colIndices = newColIndices;
+		  _values = newValues;
+		  _rows = rows;
+	  }
+	  
+	  public void fullDump() {
+		  for (int i = 0; i < _rows; i++) {
+			  int currentCol = 0;
+			  StringBuffer row = new StringBuffer();
+			  if (_colIndices[i] != null) {
+				  for (int j = 0; j < _colIndices[i].size(); j++) {
+					  while (currentCol++ < _colIndices[i].get(j)) {
+						  row.append("\t0");						  
+					  }
+					  row.append("\t" + _values[i].get(j));
+				  } 
+			  }
+			  for (int j = currentCol -1; j < _cols; j++) {
+				  row.append("\t0");
+			  }
+			  System.out.println(row);
+		  }
+		  
+	  }
+	  
 	  public void dump() {
 		  for (int i = 0; i < _rows; i++) {
 			  if (_colIndices[i] != null) {
