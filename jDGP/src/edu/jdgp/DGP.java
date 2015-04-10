@@ -653,7 +653,7 @@ public class DGP extends DGP_h
 	  public VecInt getTreeEdges() {
 		  return _treeEdges;
 	  }
-  }
+  }  
   //////////////////////////////////////////////////////////////////////
   public class SplittablePartition
     extends Partition implements SplittablePartition_h
