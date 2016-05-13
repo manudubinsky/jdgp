@@ -96,6 +96,14 @@ public class DGP extends DGP_h
 		_vec[j] = vj;
 	}
 
+	public void swap(int i, int j) throws ArrayIndexOutOfBoundsException {
+		if (i < 0 || i >= _size || j < 0 || j >= _size)
+			throw new ArrayIndexOutOfBoundsException();
+		int swap = _vec[i];
+		_vec[i] = _vec[j];
+		_vec[j] = swap;
+	}
+
 	public void swap(VecInt_h other) throws Exception {
 	}
 	
@@ -516,7 +524,7 @@ public class DGP extends DGP_h
 	}
 
 	public boolean hasToJoin(int i, int j) {
-		// obtengo los representates de las particiones de i y j
+		// obtengo los representantes de las particiones de i y j
 		int iPart = find(i);
 		int jPart = find(j);
 		int joinPart = join(i,j);
@@ -880,10 +888,10 @@ public class DGP extends DGP_h
   	un VecInt[N] (_v0Edges) que para cada vertice indique los indices de los ejes en los que dicho vertice es el v0 (esto se basa
   	en el hecho de que los pares de vertices (v0-v1) que definen un eje estan ordenados (ie v0 < v1)) 
    */
-	  private VecInt _edges;
-	  private VecInt[] _vertexEdges;
-	  private int _nV;
-	  private int _nE;
+	  protected VecInt _edges;
+	  protected VecInt[] _vertexEdges;
+	  protected int _nV;
+	  protected int _nE;
 	  
 	  
 	  public Graph() {
@@ -896,7 +904,7 @@ public class DGP extends DGP_h
 	  }
 	  
 	public void erase() {
-		_edges = new VecInt(_nV); // estimativamente lo creo del tamaño de la cantidad de nodos 
+		_edges = new VecInt(_nV); // estimativamente lo creo del tamano de la cantidad de nodos 
 		_vertexEdges = new VecInt[_nV];
 		_nE = 0;
 	}
@@ -933,7 +941,7 @@ public class DGP extends DGP_h
 					}
 					i++;
 				}
-			}			
+			}
 		}
 		
 		return index;

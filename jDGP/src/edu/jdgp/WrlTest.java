@@ -61,7 +61,7 @@ public class WrlTest extends J3DApp {
 	}
 	
 	public static void main(String[] args) {
-		WrlTest app = new WrlTest("img\\piramide flatten.wrl");
+		WrlTest app = new WrlTest("/home/manuel/doctorado/jdgp/jDGP/img/piramide.wrl");
 		app.setVisible(true);
 	    try {
 	        Thread.sleep(2000);
