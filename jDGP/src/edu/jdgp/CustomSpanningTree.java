@@ -8,9 +8,11 @@ import edu.jdgp.DGP.PartitionUnionFind;
 public class CustomSpanningTree {
 	public static class WeightedGraph extends Graph  { 
 		private VecInt _edgeWeights;
-
+		private int _totalWeight;
+		
 		public WeightedGraph(int N) {
 			super(N);
+			_totalWeight = 0;
 		}
 
 		public void erase() {
@@ -18,13 +20,18 @@ public class CustomSpanningTree {
 			_edgeWeights = new VecInt(getNumberOfVertices()); // estimativamente lo creo del tamano de la cantidad de nodos 
 		}
 
-		public int insertEdge(int iV0, int iV1, int weight) {			
+		public int insertEdge(int iV0, int iV1, int weight) {
+			_totalWeight += weight;
 			_edgeWeights.pushBack(weight);
 			return super.insertEdge(iV0, iV1);
 		}
 
 		public VecInt getEdgeWeights() {
 			return _edgeWeights;
+		}
+
+		public int getTotalWeight() {
+			return _totalWeight;
 		}
 		
 		public void dump() {
@@ -35,24 +42,16 @@ public class CustomSpanningTree {
 			} 
 		}	
 	}
-/*
-	public static void main(String[] args) {
-		WeightedGraph g = new WeightedGraph(5);
-		System.out.println("insertEdge(0, 1): " + g.insertEdge(0, 1, 1));
-		System.out.println("insertEdge(1, 2): " + g.insertEdge(1, 2, 2));
-		System.out.println("insertEdge(2, 3): " + g.insertEdge(2, 3, 3));
-		System.out.println("insertEdge(3, 4): " + g.insertEdge(3, 4, 4));
-		System.out.println("insertEdge(0, 4): " + g.insertEdge(0, 4, 5));
-		g.dump();
-	}
-*/
+
 	public static class IntHeap { 
 		private VecInt binaryTree;
 		private IntComparator comparator;
+		private boolean debug;
 		
 		public IntHeap(IntComparator comparator) {
 			binaryTree = new VecInt(8);
 			this.comparator = comparator;
+			debug = false;
 		}
 		
 		public void insert(int n) {
@@ -63,10 +62,23 @@ public class CustomSpanningTree {
 		public int extract() {
 			int root = binaryTree.get(0);
 			int lastElem = binaryTree.getPopBack();
+			//if (lastElem == 62) debug = true;
+			if (debug) {
+				System.out.println("***********************");
+				dump();
+				System.out.println("extract " +
+								"lastElem: " + lastElem + "(" + comparator.getElemValue(lastElem) + ") " + 
+								"root: " + root + "(" + comparator.getElemValue(root) + ") ");			
+			}
 			if (binaryTree.size() > 0) {
 				binaryTree.set(0, lastElem);
 				shiftDown(0);
 			}
+			if (debug) {
+				dump();				
+				System.out.println("***********************");
+			}
+			if (lastElem == 62) debug = false;
 			return root;
 		}
 		
@@ -89,15 +101,24 @@ public class CustomSpanningTree {
 			int nodeValue = binaryTree.get(nodeIdx);
 			int leftCmp = leftIdx < size ? comparator.compare(binaryTree.get(leftIdx), nodeValue) : -1;
 			int rightCmp = rightIdx < size ? comparator.compare(binaryTree.get(rightIdx), nodeValue) : -1;
+			if (debug) {
+				System.out.println("\t swapIndex idx = " + idx + " leftIdx = " + leftIdx + " rightIdx = " + rightIdx);
+				System.out.println("\t swapIndex idx = " + binaryTree.get(idx) + " (" + comparator.getElemValue(binaryTree.get(idx)) + ") " +
+									"leftIdx = " + binaryTree.get(leftIdx) + " (" + comparator.getElemValue(binaryTree.get(leftIdx)) + ") " +
+									"rightIdx = " + binaryTree.get(rightIdx) + " (" + comparator.getElemValue(binaryTree.get(rightIdx)) + ") ");
+				System.out.println("\t swapIndex leftCmp = " + leftCmp + " rightCmp = " + rightCmp);
+			}
 			if (leftCmp == 1 || rightCmp == 1) {
 				switch (leftCmp - rightCmp) {
-					case  2: idx = leftIdx; // left > node && right < node (ie: 1 - (-1))
+					case  2:
+					case  1: idx = leftIdx; // left > node && right <= node (ie: 1 - (-1))
 							 break;
 					case  0: 				// left > node && right > node (ie: 1 - 1)
 							 idx = comparator.compare(binaryTree.get(leftIdx), binaryTree.get(rightIdx)) > 0 ?
 										leftIdx : rightIdx;
 							 break;
-					case -2: idx = rightIdx; // left < node && right > node (ie: -1 - 1)
+					case -1:
+					case -2: idx = rightIdx; // left <= node && right > node (ie: -1 - 1)
 							 break;
 				}
 			}
@@ -113,22 +134,37 @@ public class CustomSpanningTree {
 		}
 
 		public void dump() {
-			binaryTree.dump();
+			int i = 1;
+			int j = 0;
+			while (j < binaryTree.size()) {
+				i <<= 1;
+				for (; j < i-1 && j < binaryTree.size(); j++) {
+					System.out.print(binaryTree.get(j) + "(" + comparator.getElemValue(binaryTree.get(j)) + ")  ");
+				}
+				System.out.println();
+			}
 		}
 	}
 
 	public static interface IntComparator {
 		public int compare(int v1, int v2);
+		public int getElemValue(int v);
 	}
-
-	public static class MaxComparator implements IntComparator {
+	
+	public static abstract class IntComparatorImpl implements IntComparator {
+		public int getElemValue(int v) {
+				return v;
+		}
+	}
+	
+	public static class MaxComparator extends IntComparatorImpl {
 			public int compare(int v1, int v2) {
 				return v1 > v2 ? 1 : 
 							v1 == v2 ? 0 : -1;
 			}
 	}
 
-	public static class MinComparator implements IntComparator {
+	public static class MinComparator extends IntComparatorImpl {
 			public int compare(int v1, int v2) {
 				return v1 < v2 ? 1 : 
 							v1 == v2 ? 0 : -1;
@@ -147,9 +183,65 @@ public class CustomSpanningTree {
 		public int compare(int v1, int v2) {
 			return comparator.compare(values.get(v1), values.get(v2));
 		}
+		
+		public int getElemValue(int v) {
+			return values.get(v);
+		}
 	}
 
-/*	
+	public static class WeightedSpanningTreeBuilder {
+		public static WeightedGraph build(WeightedGraph graph, IntComparator comparator) throws Exception {
+			WeightedGraph spanningTree = new WeightedGraph(graph.getNumberOfVertices());
+			PartitionUnionFind unionFind = new PartitionUnionFind(graph.getNumberOfVertices());
+			VecInt weights = graph.getEdgeWeights();
+			IntHeap heap = new IntHeap(new ReferenceComparator(weights, comparator));
+			for (int i = 0; i < weights.size(); i++) {
+				heap.insert(i);
+			}
+			//heap.dump();
+			while (unionFind.getNumberOfParts() > 1) {
+				//System.out.println("unionFind.getNumberOfParts: " + unionFind.getNumberOfParts());
+				int iE = heap.extract();
+				int iV0 = graph.getVertex0(iE);
+				int iV1 = graph.getVertex1(iE);
+				if (unionFind.hasToJoin(iV0, iV1)) { // particiones distintas => agregar el eje al arbol generador
+					//System.out.println("iV0: " + iV0 + " iV1: " + iV1 +" edge: " + iE + " weight: " + weights.get(iE));
+					spanningTree.insertEdge(iV0, iV1, weights.get(iE));
+				}
+			}
+			return spanningTree;
+		}
+	}
+
+//1497 + 1000 = 2497
+	public static void main(String[] args) throws Exception {
+		WeightedGraph g = new WeightedGraph(1000);
+		int nV = g.getNumberOfVertices();
+		for (int i = 0; i < nV; i++) {
+			for (int j = i+1; j < nV; j++) {
+				int v = i % 2 == 1 && j % 2 == 1 ? 1 :	// los dos impares -> 1
+						i % 2 == 0 && j % 2 == 0 ? 3 :	// los dos pares -> 
+						2;								// si no -> 2
+				g.insertEdge(i, j, v);
+			}
+		}
+		WeightedGraph tree = WeightedSpanningTreeBuilder.build(g, new MaxComparator());
+		System.out.println("tree.getTotalWeight(): " + tree.getTotalWeight());
+	}
+
+/*
+	public static void main(String[] args) throws Exception {
+		WeightedGraph g = new WeightedGraph(5);	  
+		System.out.println("insertEdge(0, 1): " + g.insertEdge(0, 1, 1));
+		System.out.println("insertEdge(1, 2): " + g.insertEdge(1, 2, 2));
+		System.out.println("insertEdge(2, 3): " + g.insertEdge(2, 3, 3));
+		System.out.println("insertEdge(3, 4): " + g.insertEdge(3, 4, 4));
+		System.out.println("insertEdge(0, 4): " + g.insertEdge(0, 4, 5));
+		g.dump();
+		WeightedGraph tree = WeightedSpanningTreeBuilder.build(g, new MaxComparator());
+		tree.dump();
+	}
+
 	public static void main(String[] args) {
 		VecInt v = new VecInt(6);
 		v.pushBack(1);
@@ -208,41 +300,17 @@ public class CustomSpanningTree {
 		h.extract();
 		h.dump();
 	}
-*/
 
-	public static class WeightedSpanningTreeBuilder {
-		public static WeightedGraph build(WeightedGraph graph, IntComparator comparator) throws Exception {
-			WeightedGraph spanningTree = new WeightedGraph(graph.getNumberOfVertices());
-			PartitionUnionFind unionFind = new PartitionUnionFind(graph.getNumberOfVertices());
-			VecInt weights = graph.getEdgeWeights();
-			IntHeap heap = new IntHeap(new ReferenceComparator(weights, comparator));
-			for (int i = 0; i < weights.size(); i++) {
-				heap.insert(i);
-			}			
-			while (unionFind.getNumberOfParts() > 1) {
-				System.out.println("unionFind.getNumberOfParts: " + unionFind.getNumberOfParts());
-				int iE = heap.extract();
-				int iV0 = graph.getVertex0(iE);
-				int iV1 = graph.getVertex1(iE);
-				if (unionFind.hasToJoin(iV0, iV1)) { // particiones distintas => agregar el eje al arbol generador
-					spanningTree.insertEdge(iV0, iV1, weights.get(iE));
-				}
-			}
-			return spanningTree;
-		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		WeightedGraph g = new WeightedGraph(5);	  
+	public static void main(String[] args) {
+		WeightedGraph g = new WeightedGraph(5);
 		System.out.println("insertEdge(0, 1): " + g.insertEdge(0, 1, 1));
 		System.out.println("insertEdge(1, 2): " + g.insertEdge(1, 2, 2));
 		System.out.println("insertEdge(2, 3): " + g.insertEdge(2, 3, 3));
 		System.out.println("insertEdge(3, 4): " + g.insertEdge(3, 4, 4));
 		System.out.println("insertEdge(0, 4): " + g.insertEdge(0, 4, 5));
 		g.dump();
-		WeightedGraph tree = WeightedSpanningTreeBuilder.build(g, new MaxComparator());
-		tree.dump();
 	}
+*/
 	
 }
 
