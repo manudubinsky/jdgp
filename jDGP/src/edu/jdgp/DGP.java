@@ -52,6 +52,19 @@ public class DGP extends DGP_h
 		_vec[_size++] = v;
 	}
 
+	public void pushBackCoord(int x, int y, int z) {
+		pushBack(x);
+		pushBack(y);
+		pushBack(z);
+	}
+
+	public void pushBackTriFace(int iV0, int iV1, int iV2) {
+		pushBack(iV0);
+		pushBack(iV1);
+		pushBack(iV2);
+		pushBack(-1);
+	}
+	
 	private void _resize() {
 		// System.out.println("_resize: _vecLen: " + _vecLen);
 		int[] newVec = new int[_vecLen*2];
@@ -116,6 +129,11 @@ public class DGP extends DGP_h
 		System.out.println("");
 		System.out.println("*****");
 	}
+
+	// violacion del encapsulamiento para los que necesitan mayor performance
+	public int[] getVec() {
+		return _vec;
+	}
 	
 	public void init(int initValue) {
 		_reset();
@@ -133,6 +151,123 @@ public class DGP extends DGP_h
 		return convertedVec;
 	}
   }
+
+  public static class VecBool {
+	private int _vecLen;
+	private int _size;
+	private boolean[] _vec;
+
+	public VecBool() {
+		_vecLen = 1024;
+		_reset();
+	}
+
+	public VecBool(int N) {
+		_vecLen = N;
+		_reset();
+	}
+
+	public VecBool(int N, boolean initValue) {
+		_vecLen = N;
+		init(initValue);
+	}
+
+	private void _reset() {
+		_vec = new boolean[_vecLen];
+		_size = 0;
+	}
+	
+	public void erase() {
+		_size = 0;
+	}
+
+	public int size() {
+		return _size;
+	}
+
+	public void pushBack(boolean v) {
+		if (_size == _vecLen)
+			_resize();
+		_vec[_size++] = v;
+	}
+
+	private void _resize() {
+		// System.out.println("_resize: _vecLen: " + _vecLen);
+		boolean[] newVec = new boolean[_vecLen*2];
+		for (int i = 0; i < _vecLen; i++) {
+			newVec[i] = _vec[i];
+		}
+		_vec = newVec;
+		_vecLen *= 2;
+	}
+	
+	public boolean get(int j) throws ArrayIndexOutOfBoundsException {
+		if (j < 0 || j >= _size)
+				throw new ArrayIndexOutOfBoundsException();
+		return _vec[j];
+	}
+
+	public boolean getFront() throws ArrayIndexOutOfBoundsException {
+		if (_size == 0)
+			throw new ArrayIndexOutOfBoundsException();
+		return _vec[0];
+	}
+
+	public boolean getBack() throws ArrayIndexOutOfBoundsException {
+		if (_size == 0)
+			throw new ArrayIndexOutOfBoundsException();
+		return _vec[_size-1];
+	}
+
+	public void popBack() throws ArrayIndexOutOfBoundsException {
+		if (_size == 0)
+			throw new ArrayIndexOutOfBoundsException();
+		_size--;
+	}
+
+	public boolean getPopBack() {
+		return _vec[--_size];		
+	}
+	
+	public void set(int j, boolean vj) throws ArrayIndexOutOfBoundsException {
+		if (j < 0 || j >= _size)
+			throw new ArrayIndexOutOfBoundsException();
+		_vec[j] = vj;
+	}
+
+	public void swap(int i, int j) throws ArrayIndexOutOfBoundsException {
+		if (i < 0 || i >= _size || j < 0 || j >= _size)
+			throw new ArrayIndexOutOfBoundsException();
+		boolean swap = _vec[i];
+		_vec[i] = _vec[j];
+		_vec[j] = swap;
+	}
+
+	public void dump() {
+		System.out.println("*****");
+		System.out.println("dump() _vecLen: " + _vecLen + " _size: " + _size);
+		for (int i = 0; i < _vecLen; i++) {
+			System.out.print(" " + _vec[i]);
+		}
+		System.out.println("");
+		System.out.println("*****");
+	}
+
+	// violacion del encapsulamiento para los que necesitan mayor performance
+	public boolean[] getVec() {
+		return _vec;
+	}
+	
+	public void init(boolean initValue) {
+		_reset();
+		for (int i = 0; i < _vecLen; i++) {
+			pushBack(initValue);
+		}
+	}
+	
+  }
+
+
 
 /*
   public static void main(String[] args) {
@@ -184,6 +319,12 @@ public class DGP extends DGP_h
 		if (_size == _vecLen)
 			_resize();
 		_vec[_size++] = v;
+	}
+
+	public void pushBackCoord(float x, float y, float z) {
+		pushBack(x);
+		pushBack(y);
+		pushBack(z);
 	}
 
 	private void _resize() {
@@ -523,7 +664,14 @@ public class DGP extends DGP_h
 			return -1;
 	}
 
-	public boolean hasToJoin(int i, int j) {
+	public boolean checkHasToJoin(int i, int j) {
+		// obtengo los representantes de las particiones de i y j
+		int iPart = find(i);
+		int jPart = find(j);
+		return (iPart != jPart);
+	}
+	
+	public boolean checkJoin(int i, int j) {
 		// obtengo los representantes de las particiones de i y j
 		int iPart = find(i);
 		int jPart = find(j);
@@ -634,7 +782,7 @@ public class DGP extends DGP_h
 			  for (int j = 0; j < vertexEdges.size() && unionFind.getNumberOfParts() > 1; j++) {
 				  int edge = vertexEdges.get(j);
 				  int neighbor = graph.getNeighbor(v, edge);
-				  if (neighbor >= 0 && unionFind.hasToJoin(v, neighbor)) { // particiones distintas => agregar el eje al arbol generador
+				  if (neighbor >= 0 && unionFind.checkJoin(v, neighbor)) { // particiones distintas => agregar el eje al arbol generador
 						  if (addVertex(neighbor))  // vertice aun no visitado, agregar a la lista
 							  vertexes.pushBack(neighbor);
 						  _spannigTree.add(edgeIdx, minLabel(v,neighbor), -1);
@@ -661,7 +809,7 @@ public class DGP extends DGP_h
 	  public VecInt getTreeEdges() {
 		  return _treeEdges;
 	  }
-  }  
+  }
   //////////////////////////////////////////////////////////////////////
   public class SplittablePartition
     extends Partition implements SplittablePartition_h
@@ -1231,6 +1379,10 @@ coordIndex [
 		// _graph.dump();
 	}
 	
+	public Graph getGraph() {
+		return _graph;
+	}
+	
 	private void _insertEdge(int iF, int iC0, int iC1) {
 		// _edgeFaces se base en que _graph.insertEdge(iV0, iV1) inserta de forma correlativa (ie.: primero el 1, despues el 2, etc.) 
 		int iV0 = _coordIndex.get(iC0);
@@ -1580,8 +1732,8 @@ coordIndex [
 		  VecFloat[] newValues = new VecFloat[rows];
 		  for (int i = 0; i < _colIndices.length; i++) {
 			  int rowSize = _colIndices[i].size();
-			  newColIndices[i] = new VecInt(rowSize, -1);
-			  newValues[i] = new VecFloat(rowSize, -1);
+			  newColIndices[i] = new VecInt(rowSize,-1);
+			  newValues[i] = new VecFloat(rowSize,-1);
 			  for (int j = 0; j < rowSize; j++) {
 				  newColIndices[i].set(j, _colIndices[i].get(j));
 				  newValues[i].set(j, _values[i].get(j));
@@ -1609,7 +1761,6 @@ coordIndex [
 			  }
 			  System.out.println(row);
 		  }
-		  
 	  }
 	  
 	  public void dump() {
@@ -1633,4 +1784,5 @@ coordIndex [
 	  }
 
   }
+  
 }
