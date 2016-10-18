@@ -95,7 +95,7 @@ public class SpanningTreesTarjanRead {
 	}
 	
 	public int getTreeCnt() {
-			return _treeCnt;
+		return _treeCnt;
 	}
 	
 	public void allSpanningTrees() {
@@ -106,6 +106,7 @@ public class SpanningTreesTarjanRead {
 
 
 	public static void main(String[] args) throws Exception {
+		long startTime = System.currentTimeMillis();		
 		SpanningTreesTarjanRead s;
 		int n = 9;		
 		System.out.println("Complete Graphs");
@@ -135,7 +136,9 @@ public class SpanningTreesTarjanRead {
 						          Math.pow((double)j, (double)i-1) ? " OK" : " ERROR") + " (" + treeCnt + ")");
 			}
 		}
-		
+		long endTime   = System.currentTimeMillis();
+		long totalTime = endTime - startTime;
+		System.out.println("totalTime: " + totalTime);
 	}
 
 }
