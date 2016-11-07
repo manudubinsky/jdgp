@@ -1210,6 +1210,34 @@ public class DGP extends DGP_h
 		}
 	}
 	
+	public static Graph buildCompleteGraph(int n) {
+		Graph g = new Graph(n);
+		for (int i = 0; i < n-1; i++) {
+			for (int j = i+1; j < n; j++) {
+				g.insertEdge(i, j);
+			}
+		}
+		return g;
+	}
+	
+	public static Graph buildCycleGraph(int n) {
+		Graph g = new Graph(n);
+		for (int i = 0; i < n; i++) {
+			g.insertEdge(i, (i + 1) % n);
+		}
+		return g;
+	}
+
+	public static Graph buildCompleteBipartite(int n, int m) {
+		Graph g = new Graph(n+m);
+		for (int i = 0; i < n; i++) {
+			for (int j = n; j < n + m; j++) {
+				g.insertEdge(i, j);
+			}
+		}
+		return g;
+	}
+
   }
 
 	//grafo que permite renombrar los ejes. esto sirve específicamente

@@ -108,7 +108,7 @@ public class SpanningTreesTarjanRead {
 	public static void main(String[] args) throws Exception {
 		long startTime = System.currentTimeMillis();		
 		SpanningTreesTarjanRead s;
-		int n = 9;		
+		int n = 9;
 		System.out.println("Complete Graphs");
 		for (int i = 2; i < n; i++) {
 			s = new SpanningTreesTarjanRead(GraphTarjanRead.buildCompleteGraph(i));

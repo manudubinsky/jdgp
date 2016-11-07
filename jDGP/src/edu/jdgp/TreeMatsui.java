@@ -24,14 +24,15 @@ public class TreeMatsui {
 		_relabelGraph = relabelGraph;
 		_graph = relabelGraph.getGraph();
 		_treeEdges = new VecInt(_graph.getNumberOfVertices()-1,-1);
-		_availableEdges = new VecBool(_graph.getNumberOfEdges(),false);
-		top = bottom = -1;
+		_availableEdges = new VecBool(_graph.getNumberOfEdges(),false);		
 
 		//el árbol inicial son los labels 0..n-2
 		for (int i = 0; i < _treeEdges.size(); i++) {
 			_treeEdges.set(i,i);
 			_availableEdges.set(_relabelGraph.getGraphIdx(i),true);
 		}
+		top = 0;
+		bottom = _treeEdges.size() - 1;
 	}
 	
 	//sustituye el indice de un eje con otro (para obtener un hijo)
@@ -75,18 +76,6 @@ public class TreeMatsui {
 		return bottom;
 	}
 
-/*
-	public VecBool getSetH() {
-		int n = _treeEdges.size();
-		VecBool setH = new VecBool(n,false);
-		for (int i = 0; i < n; i++) {
-			int iE = _treeEdges.get(i);
-			if (iE < n)
-				setH.set(iE, true);
-		}
-		return setH;
-	}
-*/
 	//simplificacion de la funcion "label" que sugiere el paper
 	public PartitionUnionFind label() throws Exception {
 		PartitionUnionFind label = new PartitionUnionFind(_graph.getNumberOfVertices());
@@ -116,9 +105,12 @@ public class TreeMatsui {
 					_availableEdges.set(iE, false);
 					int neighbor = _graph.getNeighbor(fromVertex, iE);
 					if (findPath(neighbor, toVertex, edgeList)) {
+						//System.out.println("fromVertex: " + fromVertex + " toVertex: " + toVertex + " iE: " + iE + " entre 2");
 						found = true;
-						if (iE < _graph.getNumberOfVertices()-1)
+						if (_relabelGraph.getLabel(iE) < _graph.getNumberOfVertices()-1) {
+							//System.out.println("fromVertex: " + fromVertex + " toVertex: " + toVertex + " iE: " + iE + " entre 3");
 							edgeList.pushBack(_relabelGraph.getLabel(iE));
+						}
 					}
 					_availableEdges.set(iE, true);
 				}
@@ -130,7 +122,7 @@ public class TreeMatsui {
 	//para un eje pivot e, devuelve la lista de los indices de _treeEdges 
 	//que pueden sustituirse por e para obtener un hijo
 	//si no devuelve una lista vacía
-	public VecInt checkPivotEdge(int iE) throws Exception {
+	public VecInt getCycleEdges(int iE) throws Exception {
 		VecInt edgeList = new VecInt(2);
 		int graphEdgeIdx = _relabelGraph.getGraphIdx(iE);
 		findPath(_graph.getVertex0(graphEdgeIdx), _graph.getVertex1(graphEdgeIdx), edgeList);
@@ -139,10 +131,44 @@ public class TreeMatsui {
 	
 	public void dump() {
 		System.out.println("top: " + top + " bottom: " + bottom);
+		_graph.dump();
 		_treeEdges.dump();
 		_availableEdges.dump();
 	}
 
+	public static void main(String[] args) throws Exception {
+		TreeMatsui t;
+		int n = 9; //9
+		System.out.println("Complete Graphs");
+		for (int i = 3; i < n; i++) {
+			boolean ok = true;
+			t = new TreeMatsui(new EdgeRelabelGraph(Graph.buildCompleteGraph(i)));
+			for (int j = i-1; j < i*(i-1)/2 && ok; j++) {
+				ok = ok && (t.getCycleEdges(j).size() == 2);
+			}
+			System.out.println(i + ": " + (ok ? "OK" : "ERROR"));
+		}
+		System.out.println("Cycle Graphs");
+		for (int i = 3; i < n; i++) {
+			t = new TreeMatsui(new EdgeRelabelGraph(Graph.buildCycleGraph(i)));
+			System.out.println(i + ": " + (t.getCycleEdges(i-1).size() == i-1 ? "OK" : "ERROR"));
+		}
+		n = 5;
+		int m = 7;
+		System.out.println("Complete Bipartite Graphs");
+		for (int i = 2; i < n; i++) {
+			for (int j = i; j < m; j++) {
+				boolean ok = true;
+				t = new TreeMatsui(new EdgeRelabelGraph(Graph.buildCompleteBipartite(i,j)));
+				for (int k = i+j-1; k < i*j; k++) {
+					ok = ok && (t.getCycleEdges(k).size() == 3); //los ciclos en un bipartito miden 4
+				}
+				System.out.println("[" + i + "," + j + "]: " + (ok ? "OK" : "ERROR"));
+			}
+		}
+	}
+
+/*
 	public static void main(String[] args) throws Exception {
 		Graph g = new Graph(5);
 		g.insertEdge(0, 1);//0
@@ -155,12 +181,12 @@ public class TreeMatsui {
 		TreeMatsui t = new TreeMatsui(new EdgeRelabelGraph(g));
 		t.dump();
 		t.label().dump();
-		t.checkPivotEdge(4).dump();//[0,1]
-		t.checkPivotEdge(5).dump();//[1,2]
-		t.checkPivotEdge(6).dump();//[2,3]
+		t.getCycleEdges(4).dump();//[0,1]
+		t.getCycleEdges(5).dump();//[1,2]
+		t.getCycleEdges(6).dump();//[2,3]
 		t.set(2,6);
 		t.label().dump();
-		t.checkPivotEdge(2).dump();//[3,6]
+		t.getCycleEdges(2).dump();//[3,6]
 	}
-
+*/
 }
