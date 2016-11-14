@@ -102,7 +102,13 @@ public class DGP extends DGP_h
 	public int getPopBack() {
 		return _vec[--_size];		
 	}
-	
+
+	public void popBackN(int n) throws ArrayIndexOutOfBoundsException {
+		if (_size < n)
+			throw new ArrayIndexOutOfBoundsException();
+		_size -= n;
+	}
+
 	public void set(int j, int vj) throws ArrayIndexOutOfBoundsException {
 		if (j < 0 || j >= _size)
 			throw new ArrayIndexOutOfBoundsException();
@@ -140,6 +146,15 @@ public class DGP extends DGP_h
 		for (int i = 0; i < _vecLen; i++) {
 			pushBack(initValue);
 		}
+	}
+	
+	public boolean contains(int value) {
+		boolean found = false;
+		for (int i = 0; i < _size && !found; i++) {
+			if (_vec[i] == value)
+				found = true;
+		}
+		return found;
 	}
 	
 	public static VecInt fromWrlVecInt(mesh.VecInt v) {

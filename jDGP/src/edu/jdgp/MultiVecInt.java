@@ -46,6 +46,13 @@ public class MultiVecInt {
 		return _nextSlot++;
 	}
 	
+	//notificacion de que se deja de usar un slot
+	public void dropSlot(int slotID) {
+		for (int i = slotID * _numVecsPerSlot; i < slotID * _numVecsPerSlot + _numVecsPerSlot; i++) {
+			_vecs[slotID * _numVecsPerSlot + i] = null;
+		}
+	}
+	
 	// se asume que el slotID fue creado previamente (llamando a newSlot)
 	// y que: 0 <= vecID < numVecsPerSlot
 	public void setVec(int slotID, int vecID, VecInt vec) {
