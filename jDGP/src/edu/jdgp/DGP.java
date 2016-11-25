@@ -156,6 +156,14 @@ public class DGP extends DGP_h
 		}
 		return found;
 	}
+
+	public VecInt clone() {
+		VecInt copy = new VecInt(_vecLen);
+		for (int i = 0; i < _size; i++) {
+			copy.pushBack(_vec[i]);
+		}
+		return copy;
+	}
 	
 	public static VecInt fromWrlVecInt(mesh.VecInt v) {
 		int size = v.size();

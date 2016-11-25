@@ -54,6 +54,10 @@ public class CustomSpanningTree {
 			debug = false;
 		}
 		
+		public int getRoot() {
+			return binaryTree.size() > 0 ? binaryTree.get(0) : -1;
+		}
+		
 		public void insert(int n) {
 			binaryTree.pushBack(n);
 			shiftUp(binaryTree.size()-1);			
@@ -204,7 +208,7 @@ public class CustomSpanningTree {
 				int iE = heap.extract();
 				int iV0 = graph.getVertex0(iE);
 				int iV1 = graph.getVertex1(iE);
-				if (unionFind.hasToJoin(iV0, iV1)) { // particiones distintas => agregar el eje al arbol generador
+				if (unionFind.checkJoin(iV0, iV1)) { // particiones distintas => agregar el eje al arbol generador
 					//System.out.println("iV0: " + iV0 + " iV1: " + iV1 +" edge: " + iE + " weight: " + weights.get(iE));
 					spanningTree.insertEdge(iV0, iV1, weights.get(iE));
 				}

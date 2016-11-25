@@ -10,7 +10,7 @@ import edu.jdgp.GraphTarjanRead;
 
 /*
  * Implementacion de Matsui para generar todos los árboles 
- * generadores de un grafo conexi. Referencia:
+ * generadores de un grafo conexo. Referencia:
  * 		"SpanningTreesMatsui.pdf"
  * */
 public class SpanningTreesMatsui {
@@ -51,6 +51,14 @@ public class SpanningTreesMatsui {
 		// System.out.println("ACA: " + _treeCnt++);
 		_treeCnt++;
 	}	
+	
+	public void setEdge(int idx, int newEdgeIdx) { //método para que desde afuera se pueda setear un eje (ej.:GRASP)
+		_tree.set(idx, newEdgeIdx);
+	}
+
+	public VecInt getTreeEdges() {
+		return _tree.getTreeEdges();
+	}
 	
 	public void allSpanningTrees() throws Exception {
 		processSpanningTree();
