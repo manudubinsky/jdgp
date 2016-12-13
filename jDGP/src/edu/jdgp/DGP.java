@@ -325,6 +325,33 @@ public class DGP extends DGP_h
 		init(initValue);
 	}
 
+	public VecFloat clone() {
+		VecFloat copy = new VecFloat(_vecLen);
+		for (int i = 0; i < _size; i++) {
+			copy.pushBack(_vec[i]);
+		}
+		return copy;
+	}
+
+	public float innerProd(VecFloat v) {
+		float innerProd = 0;
+		for (int i = 0; i < _size; i++) {
+			innerProd +=  _vec[i] * v._vec[i];
+		}
+		return innerProd;
+	}
+
+	public float squareNorm() {
+		return innerProd(this);
+	}
+
+	public VecFloat multiplyByScalar(float scalar) {
+		for (int i = 0; i < _size; i++) {
+			_vec[i] *= scalar;
+		}
+		return this;
+	}
+
 	private void _reset() {
 		_vec = new float[_vecLen];
 		_size = 0;
@@ -429,6 +456,11 @@ public class DGP extends DGP_h
 			float value = get(i);
 			set(i, value + v.get(i));
 		}
+	}
+
+	public VecFloat subtract(VecFloat v) throws Exception {
+		addMultiple(v, -1);
+		return this;
 	}
 
 	public void addMultiple(VecFloat v, float lamda) throws Exception {
@@ -1770,7 +1802,25 @@ coordIndex [
 		  _rows = rows;
 		  _init();
 	  }
+
+	  public int getRows() {
+		  return _rows;
+	  }
+
+	  public int getCols() {
+		  return _cols + 1;
+	  }
 	  
+	public SparseMatrix transpose() {
+		SparseMatrix transp = new SparseMatrix(getCols());
+		for (int i = 0; i < _colIndices.length; i++) {
+			for (int j = 0; j < _colIndices[i].size(); j++) {
+			  transp.set(_colIndices[i].get(j), i, _values[i].get(j));
+			}
+		}
+		return transp;
+	}
+		
 	  private void _init() {
 		  _colIndices = new VecInt[_rows];
 		  _values = new VecFloat[_rows];

@@ -219,17 +219,20 @@ public class CustomSpanningTree {
 
 //1497 + 1000 = 2497
 	public static void main(String[] args) throws Exception {
-		WeightedGraph g = new WeightedGraph(1000);
+		WeightedGraph g = new WeightedGraph(100);
+		// WeightedGraph g = new WeightedGraph(3);
 		int nV = g.getNumberOfVertices();
 		for (int i = 0; i < nV; i++) {
 			for (int j = i+1; j < nV; j++) {
 				int v = i % 2 == 1 && j % 2 == 1 ? 1 :	// los dos impares -> 1
 						i % 2 == 0 && j % 2 == 0 ? 3 :	// los dos pares -> 
 						2;								// si no -> 2
+				//System.out.println("i: " + i + " j: " + j + " v:" + v);
 				g.insertEdge(i, j, v);
 			}
 		}
-		WeightedGraph tree = WeightedSpanningTreeBuilder.build(g, new MaxComparator());
+		//System.out.println("g.getNumberOfEdges(): " + g.getNumberOfEdges());
+		WeightedGraph tree = WeightedSpanningTreeBuilder.build(g, new MinComparator());
 		System.out.println("tree.getTotalWeight(): " + tree.getTotalWeight());
 	}
 

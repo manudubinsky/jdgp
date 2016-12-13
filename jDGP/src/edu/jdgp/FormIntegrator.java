@@ -72,6 +72,7 @@ public class FormIntegrator {
 			PolygonMesh pm = new PolygonMesh(coord, coordIndex);
 			FormIntegrator integrator = new FormIntegrator(pm);
 			integrator.getEdgesMatrix().fullDump();
+			integrator.getEdgesMatrix().transpose().fullDump();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

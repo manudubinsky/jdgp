@@ -97,6 +97,10 @@ public class SpanningTreesMatsui {
 		return _treeCnt;
 	}
 	
+	public int getEdgeIdx(int relabelEdgeIdx) {
+		return _relabelGraph.getGraphIdx(relabelEdgeIdx);
+	}
+	
 	public void dump() {
 	}
 

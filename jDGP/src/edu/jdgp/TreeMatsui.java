@@ -37,6 +37,7 @@ public class TreeMatsui {
 	
 	//sustituye el indice de un eje con otro (para obtener un hijo)
 	public void set(int idx, int newEdgeIdx) {
+		//System.out.println("idx: " + idx + " newEdgeIdx: " + newEdgeIdx);
 		int oldEdgeIdx = _treeEdges.get(idx);
 		_availableEdges.set(_relabelGraph.getGraphIdx(oldEdgeIdx), false);
 		_availableEdges.set(_relabelGraph.getGraphIdx(newEdgeIdx), true);
