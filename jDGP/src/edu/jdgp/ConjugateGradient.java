@@ -3,14 +3,14 @@ package edu.jdgp;
 import edu.jdgp.DGP.SparseMatrix;
 import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecFloat;
-
+import edu.jdgp.DGP.SparseMatrixInt;
 /*
  * Implementacion de Gradiente Conjugado
  * */
 public class ConjugateGradient {
 	
 	public VecFloat execute(SparseMatrix A, VecFloat b, VecFloat xInitial, float delta) throws Exception {
-		//b.dump(); A.dump(); 
+		//A.dump(); b.dump();
 		VecFloat x = xInitial;
 		VecFloat r = b.clone();
 		r.subtract(A.multiplyByVector(x));
@@ -34,6 +34,11 @@ public class ConjugateGradient {
 
 	public VecFloat execute(SparseMatrix A, VecFloat b) throws Exception {
 		return execute(A, b, new VecFloat(A.getCols(), 0), 0.0000001f);
+	}
+
+
+	public VecFloat execute(SparseMatrixInt A, VecInt b) throws Exception {
+		return execute(A.toFloat(), b.toFloat());
 	}
 
 /*	

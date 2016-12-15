@@ -195,9 +195,10 @@ public class SpanningTreesGRASP {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		/* for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 10; i++) {
 			System.out.println(ThreadLocalRandom.current().nextInt(1, 10 + 1));
-		} */
+		}
+		/*
 		WeightedGraph g = new WeightedGraph(100);
 		int nV = g.getNumberOfVertices();
 		for (int i = 0; i < nV; i++) {
@@ -212,6 +213,7 @@ public class SpanningTreesGRASP {
 		//System.out.println("g.getNumberOfEdges(): " + g.getNumberOfEdges());
 		GRASPStrategyBestN s = new GRASPStrategyBestN(g, 5);
 		s.execute(80).dump();
+		*/ 
 	}
 
 }

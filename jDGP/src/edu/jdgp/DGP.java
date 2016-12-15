@@ -164,6 +164,14 @@ public class DGP extends DGP_h
 		}
 		return copy;
 	}
+
+	public VecFloat toFloat() {
+		VecFloat floatCopy = new VecFloat();
+		for (int i = 0; i < _size; i++) {
+			floatCopy.pushBack((float)_vec[i]);
+		}
+		return floatCopy;
+	}
 	
 	public static VecInt fromWrlVecInt(mesh.VecInt v) {
 		int size = v.size();
@@ -1255,6 +1263,29 @@ public class DGP extends DGP_h
 		return isConnected;
 	}
 	
+	public SparseMatrixInt buildDirectedIncidenceMatrix() throws Exception {		
+		SparseMatrixInt m = new SparseMatrixInt(_nE);
+		for (int i = 0; i < _nE; i++) {
+			int iV0 = getVertex0(i);
+			int iV1 = getVertex1(i);
+			m.set(i, iV0, -1);
+			m.set(i, iV1, 1);
+		}
+		return m;
+	}	
+
+	public SparseMatrixInt buildLaplacianMatrix() throws Exception {
+		SparseMatrixInt m = new SparseMatrixInt(_nV);
+		for (int i = 0; i < _nV; i++) {
+			VecInt neighbors = getVertexEdges(i);
+			m.set(i, i, neighbors.size());
+			for (int j = 0; j < neighbors.size(); j++) {
+				m.set(i, getNeighbor(i, neighbors.get(j)), -1);
+			}
+		}
+		return m;
+	}	
+
 	public void dump() {
 		int size = _edges.size();
 		int i = 0;
@@ -1910,6 +1941,201 @@ coordIndex [
 			  int rowSize = _colIndices[i].size();
 			  newColIndices[i] = new VecInt(rowSize,-1);
 			  newValues[i] = new VecFloat(rowSize,-1);
+			  for (int j = 0; j < rowSize; j++) {
+				  newColIndices[i].set(j, _colIndices[i].get(j));
+				  newValues[i].set(j, _values[i].get(j));
+			  }
+		  }
+		  _colIndices = newColIndices;
+		  _values = newValues;
+		  _rows = rows;
+	  }
+	  
+	  public void fullDump() {
+		  for (int i = 0; i < _rows; i++) {
+			  int currentCol = 0;
+			  StringBuffer row = new StringBuffer();
+			  if (_colIndices[i] != null) {
+				  for (int j = 0; j < _colIndices[i].size(); j++) {
+					  while (currentCol++ < _colIndices[i].get(j)) {
+						  row.append("\t0");						  
+					  }
+					  row.append("\t" + _values[i].get(j));
+				  } 
+			  }
+			  for (int j = currentCol -1; j < _cols; j++) {
+				  row.append("\t0");
+			  }
+			  System.out.println(row);
+		  }
+	  }
+	  
+	  public void dump() {
+		  for (int i = 0; i < _rows; i++) {
+			  if (_colIndices[i] != null) {
+				  for (int j = 0; j < _colIndices[i].size(); j++) {
+					  System.out.println("[" + i + "," + _colIndices[i].get(j) + "]: " + _values[i].get(j));
+				  }
+			  }
+		  }
+	  }
+	  
+	  public void dump(String tag) {
+		  for (int i = 0; i < _rows; i++) {
+			  if (_colIndices[i] != null) {
+				  for (int j = 0; j < _colIndices[i].size(); j++) {
+					  System.out.println(tag + " [" + i + "," + _colIndices[i].get(j) + "]: " + _values[i].get(j));
+				  }
+			  }
+		  }
+	  }
+
+  }
+
+//ACA
+
+  public static class SparseMatrixInt
+  {
+	  int _rows;
+	  int _cols;
+	  private VecInt[] _colIndices;
+	  private VecInt[] _values;
+	  
+	  public SparseMatrixInt(int rows) {
+		  _rows = rows;
+		  _init();
+	  }
+
+	  public int getRows() {
+		  return _rows;
+	  }
+
+	  public int getCols() {
+		  return _cols + 1;
+	  }
+	  
+	public SparseMatrixInt transpose() {
+		SparseMatrixInt transp = new SparseMatrixInt(getCols());
+		for (int i = 0; i < _colIndices.length; i++) {
+			for (int j = 0; j < _colIndices[i].size(); j++) {
+			  transp.set(_colIndices[i].get(j), i, _values[i].get(j));
+			}
+		}
+		return transp;
+	}
+
+	public SparseMatrix toFloat() {
+		SparseMatrix floatCopy = new SparseMatrix(_rows);
+		for (int i = 0; i < _rows; i++) {
+		  if (_colIndices[i] != null) {
+			  for (int j = 0; j < _colIndices[i].size(); j++) {
+				  floatCopy.set(i, _colIndices[i].get(j),(float)_values[i].get(j));
+			  }
+		  }
+		}
+		return floatCopy;
+	}
+		
+	  private void _init() {
+		  _colIndices = new VecInt[_rows];
+		  _values = new VecInt[_rows];
+	  }
+	  
+	public void set(int row, int col, int value) {
+		if (_colIndices[row] == null) {
+		  _colIndices[row] = new VecInt(1);
+		  _values[row] = new VecInt(1);
+		}
+		// System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
+		int colIndex = -1;
+		// _colIndices[row].dump();
+		for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
+		  // System.out.println("get(...) _colIndices[row].get(i): " + _colIndices[row].get(i));
+		  if (_colIndices[row].get(i) == col)
+			  colIndex = i;
+		}
+		if (colIndex >= 0 )
+			_values[row].set(colIndex,value);
+		else {
+			_colIndices[row].pushBack(col);
+			_values[row].pushBack(value);
+		}
+		if (_cols < col)
+		  _cols = col;
+	}
+	  
+	  public int get(int row, int col) {
+		  int value = 0;
+		  // System.out.println("get(...) row: " + row + " col: " + col);
+		  if (_colIndices[row] != null) {
+			  // System.out.println("get(...) not null!!! _colIndices[row]: " + _colIndices[row].size());
+			  int colIndex = -1;
+			  // _colIndices[row].dump();
+			  for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
+				  // System.out.println("get(...) _colIndices[row].get(i): " + _colIndices[row].get(i));
+				  if (_colIndices[row].get(i) == col)
+					  colIndex = i;
+			  }
+			  if (colIndex >= 0 )
+				  value = _values[row].get(colIndex);
+		  }
+		  return value;
+	  }
+	  
+	  public void add(int row, int col, int value) {
+		  if (value != 0) {
+			  if (_colIndices[row] != null) {			  
+				  int previousValue = 0;
+				  int colIndex = -1;
+				  for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
+					  if (_colIndices[row].get(i) == col)
+						  colIndex = i;
+				  }
+				  if (colIndex >= 0 ) {
+					  previousValue = _values[row].get(colIndex);
+					  _values[row].set(colIndex, previousValue + value);
+				  } else {
+					  set(row, col, value);
+				  }
+			  } else {
+				  set(row, col, value);
+			  }
+		  }
+	  }
+	  
+	  public VecInt multiplyByVector(VecInt v) {
+		  VecInt resultVec = new VecInt(v.size(), 0);		  
+		  for (int i = 0; i < _colIndices.length; i++) {
+			  int value = 0;
+			  for (int j = 0; j < _colIndices[i].size(); j++) {
+				  value += _values[i].get(j) * v.get(_colIndices[i].get(j));
+			  }
+			  resultVec.set(i, value);
+		  }
+		  return resultVec;
+	  }
+
+	  public VecInt multiplyByVectorAndScalar(VecInt v, int scalar) {
+		  VecInt resultVec = new VecInt(v.size(), 0);		  
+		  for (int i = 0; i < _colIndices.length; i++) {
+			  int value = 0;
+			  if (_colIndices[i] != null) {
+				  for (int j = 0; j < _colIndices[i].size(); j++) {
+					  value += _values[i].get(j) * v.get(_colIndices[i].get(j));
+				  }
+			  }
+			  resultVec.set(i, scalar * value);
+		  }
+		  return resultVec;
+	  }
+
+	  public void resize(int rows) {
+		  VecInt[] newColIndices = new VecInt[rows];
+		  VecInt[] newValues = new VecInt[rows];
+		  for (int i = 0; i < _colIndices.length; i++) {
+			  int rowSize = _colIndices[i].size();
+			  newColIndices[i] = new VecInt(rowSize,-1);
+			  newValues[i] = new VecInt(rowSize,-1);
 			  for (int j = 0; j < rowSize; j++) {
 				  newColIndices[i].set(j, _colIndices[i].get(j));
 				  newValues[i].set(j, _values[i].get(j));
