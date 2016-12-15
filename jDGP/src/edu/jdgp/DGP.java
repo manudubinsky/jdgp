@@ -157,6 +157,11 @@ public class DGP extends DGP_h
 		return found;
 	}
 
+	public void pushBackUnique(int value) {
+		if (!contains(value))
+			pushBack(value);
+	}
+
 	public VecInt clone() {
 		VecInt copy = new VecInt(_vecLen);
 		for (int i = 0; i < _size; i++) {
@@ -2102,6 +2107,14 @@ coordIndex [
 			  }
 		  }
 	  }
+
+	public int multiplyRowByVector(int row, VecInt v) {
+		int value = 0;
+		for (int j = 0; j < _colIndices[row].size(); j++) {
+			value += _values[row].get(j) * v.get(_colIndices[row].get(j));
+		}
+		return value;
+	}
 	  
 	  public VecInt multiplyByVector(VecInt v) {
 		  VecInt resultVec = new VecInt(v.size(), 0);		  
