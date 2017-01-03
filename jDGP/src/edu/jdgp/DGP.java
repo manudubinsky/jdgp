@@ -346,6 +346,16 @@ public class DGP extends DGP_h
 		return copy;
 	}
 
+	public boolean allEqual() {
+		boolean equal = true;
+		float v0 = _vec[0];
+		for (int i = 0; (i < _size) && equal; i++) {
+			if (Math.abs(_vec[i] - _vec[0]) > 0.0001f)
+				equal = false;
+		}
+		return equal;
+	}
+
 	public float innerProd(VecFloat v) {
 		float innerProd = 0;
 		for (int i = 0; i < _size; i++) {
@@ -472,17 +482,17 @@ public class DGP extends DGP_h
 	}
 
 	public VecFloat subtract(VecFloat v) throws Exception {
-		addMultiple(v, -1);
-		return this;
+		return addMultiple(v, -1);
 	}
 
-	public void addMultiple(VecFloat v, float lamda) throws Exception {
+	public VecFloat addMultiple(VecFloat v, float lamda) throws Exception {
 		if (_size != v.size())
 			throw new Exception("Dimensions differ! this.size:" + _size + " v.size: " + v.size());
 		for (int i = 0; i < _size; i++) {
 			float value = get(i);
 			set(i, value + v.get(i) * lamda);
 		}
+		return this;
 	}
 
 	private boolean inRange(int index) {
@@ -1914,7 +1924,7 @@ coordIndex [
 	  }
 	  
 	  public VecFloat multiplyByVector(VecFloat v) {
-		  VecFloat resultVec = new VecFloat(v.size(), 0);		  
+		  VecFloat resultVec = new VecFloat(_rows, 0);		  
 		  for (int i = 0; i < _colIndices.length; i++) {
 			  float value = 0;
 			  for (int j = 0; j < _colIndices[i].size(); j++) {
@@ -1926,7 +1936,7 @@ coordIndex [
 	  }
 
 	  public VecFloat multiplyByVectorAndScalar(VecFloat v, float scalar) {
-		  VecFloat resultVec = new VecFloat(v.size(), 0);		  
+		  VecFloat resultVec = new VecFloat(_rows, 0);		  
 		  for (int i = 0; i < _colIndices.length; i++) {
 			  float value = 0;
 			  if (_colIndices[i] != null) {
@@ -2086,7 +2096,26 @@ coordIndex [
 		  }
 		  return value;
 	  }
-	  
+
+	public void invert(int row, int col) {
+		int value = 0;
+		// System.out.println("get(...) row: " + row + " col: " + col);
+		if (_colIndices[row] != null) {
+			// System.out.println("get(...) not null!!! _colIndices[row]: " + _colIndices[row].size());
+			int colIndex = -1;
+			// _colIndices[row].dump();
+			for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
+				// System.out.println("get(...) _colIndices[row].get(i): " + _colIndices[row].get(i));
+				if (_colIndices[row].get(i) == col)
+				  colIndex = i;
+			}
+			if (colIndex >= 0 ) {
+				value = _values[row].get(colIndex);
+				_values[row].set(colIndex, -value);
+			}
+		}
+	}
+		  
 	  public void add(int row, int col, int value) {
 		  if (value != 0) {
 			  if (_colIndices[row] != null) {			  
@@ -2117,7 +2146,7 @@ coordIndex [
 	}
 	  
 	  public VecInt multiplyByVector(VecInt v) {
-		  VecInt resultVec = new VecInt(v.size(), 0);		  
+		  VecInt resultVec = new VecInt(_rows, 0);
 		  for (int i = 0; i < _colIndices.length; i++) {
 			  int value = 0;
 			  for (int j = 0; j < _colIndices[i].size(); j++) {
@@ -2128,8 +2157,21 @@ coordIndex [
 		  return resultVec;
 	  }
 
+	public VecFloat multiplyByVector(VecFloat v) {
+		VecFloat resultVec = new VecFloat(_rows, 0);
+		for (int i = 0; i < _colIndices.length; i++) {
+			float value = 0;
+			for (int j = 0; j < _colIndices[i].size(); j++) {
+				value += (float)_values[i].get(j) * v.get(_colIndices[i].get(j));
+			}
+			resultVec.set(i, value);
+		}
+		return resultVec;
+	}
+
+
 	  public VecInt multiplyByVectorAndScalar(VecInt v, int scalar) {
-		  VecInt resultVec = new VecInt(v.size(), 0);		  
+		  VecInt resultVec = new VecInt(_rows, 0);		  
 		  for (int i = 0; i < _colIndices.length; i++) {
 			  int value = 0;
 			  if (_colIndices[i] != null) {

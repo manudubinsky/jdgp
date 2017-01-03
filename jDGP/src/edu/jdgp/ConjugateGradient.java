@@ -9,7 +9,7 @@ import edu.jdgp.DGP.SparseMatrixInt;
  * */
 public class ConjugateGradient {
 	
-	public VecFloat execute(SparseMatrix A, VecFloat b, VecFloat xInitial, float delta) throws Exception {
+	public static VecFloat execute(SparseMatrix A, VecFloat b, VecFloat xInitial, float delta) throws Exception {
 		//A.dump(); b.dump();
 		VecFloat x = xInitial;
 		VecFloat r = b.clone();
@@ -21,7 +21,7 @@ public class ConjugateGradient {
 		while (A.multiplyByVector(x).subtract(b).squareNorm() > delta && i < dim) {
 			VecFloat Ap = A.multiplyByVector(p);
 			float alfa = r.squareNorm()/p.innerProd(Ap);
-			x.addMultiple(p, alfa);			
+			x.addMultiple(p, alfa);
 			VecFloat rNext = r.clone();
 			rNext.addMultiple(Ap, -alfa);
 			float beta = rNext.squareNorm()/r.squareNorm();
@@ -32,12 +32,12 @@ public class ConjugateGradient {
 		return x;
 	}
 
-	public VecFloat execute(SparseMatrix A, VecFloat b) throws Exception {
+	public static VecFloat execute(SparseMatrix A, VecFloat b) throws Exception {
 		return execute(A, b, new VecFloat(A.getCols(), 0), 0.0000001f);
 	}
 
 
-	public VecFloat execute(SparseMatrixInt A, VecInt b) throws Exception {
+	public static VecFloat execute(SparseMatrixInt A, VecInt b) throws Exception {
 		return execute(A.toFloat(), b.toFloat());
 	}
 
@@ -60,7 +60,6 @@ b = [6, 25, -11, 15]'
 		A.set(3, 0, 0);  A.set(3, 1, 3);  A.set(3, 2, -1); A.set(3, 3, 8);
 		VecFloat b = new VecFloat(4);
 		b.pushBack(6); b.pushBack(25); b.pushBack(-11); b.pushBack(15);
-		ConjugateGradient c = new ConjugateGradient();
-		c.execute(A,b).dump();
+		ConjugateGradient.execute(A,b).dump();
 	}
 }

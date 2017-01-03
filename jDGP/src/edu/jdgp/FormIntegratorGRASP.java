@@ -68,8 +68,12 @@ public class FormIntegratorGRASP {
 			return _w;
 		}
 		
-		public long getSquarecNorm() {
+		public long getSquareNorm() {
 			return _squaredNormW;
+		}
+
+		public void setSquareNorm(long norm) {
+			_squaredNormW = norm;
 		}
 		
 		public GRASPSolution clone() {
@@ -112,24 +116,80 @@ public class FormIntegratorGRASP {
 		return neighbors;
 	}
 	
-	private int findBestNeighbor(VecInt[] neigbors) {
+	private void setBestNeighbor(VecInt[] neighbors) {
+		VecInt currW = _currentW.getW();
 		VecInt edgesWeights = _graph.getEdgeWeights();
 		long bestNorm2 = -1;
 		int best = -1;
 		for (int i = 0; i < neighbors.length; i++) {
-			VecInt neighbor = neigbors[i];
-			long neighborNorm2 = _currentW.getSquarecNorm();
+			VecInt neighbor = neighbors[i];
+			long neighborNorm2 = _currentW.getSquareNorm();
 			for (int j = 0; j < neighbor.size(); j++) {
 				int iE = neighbor.get(j);
+				int edgeWeight = edgesWeights.get(iE);
+
 				int iV0 = _graph.getVertex0(iE);
 				int iV1 = _graph.getVertex1(iE);
-				int w0 = _currentW.getW(iV0);
-				int w1 = _currentW.getW(iV1);
+
+				int w0 = currW.get(iV0);
+				int w1 = currW.get(iV1);
+
+				//1) restar las componentes que queremos recalcular
 				neighborNorm2 -= (w0 * w0 + w1 * w1);
-				//ACA
-				_transposeIncidenceMatrix.get(_graph.getVertex0(iE), iE);
-				_transposeIncidenceMatrix.get(_graph.getVertex1(iE), iE);
+
+				//2) obtener la direccion del eje 
+				int edgeDir0 = _transposeIncidenceMatrix.get(iV0, iE);
+				int edgeDir1 = _transposeIncidenceMatrix.get(iV1, iE);
+
+				//3) sumar las componenetes recalculadas (w = D^t v)
+				w0 += edgeDir0 == -1 ? 2 * edgeWeight : -2 * edgeWeight;
+				w1 += edgeDir1 == -1 ? 2 * edgeWeight : -2 * edgeWeight;
+
+				neighborNorm2 += w0 * w0 + w1 * w1;
 			}
+			if (best == -1 || neighborNorm2 > bestNorm2) { //queremos minimizar sum{w_i}/||w||_2^2
+				best = i;
+				bestNorm2 = neighborNorm2;
+			}
+		}
+		setCurrentW(best, neighbors);
+		if (_currentW.getSquareNorm() > _globalBest.getSquareNorm()) {
+			_globalBest = _currentW.clone();
+		}
+	}
+
+	private void setCurrentW(int bestNeigbor, VecInt[] neigbors) {
+		VecInt neighbor = neigbors[bestNeigbor];
+		VecInt currW = _currentW.getW();
+		VecInt edgesWeights = _graph.getEdgeWeights();
+		long neighborNorm2 = _currentW.getSquareNorm();
+		for (int j = 0; j < neighbor.size(); j++) {
+				int iE = neighbor.get(j);
+				int edgeWeight = edgesWeights.get(iE);
+
+				int iV0 = _graph.getVertex0(iE);
+				int iV1 = _graph.getVertex1(iE);			
+
+				int w0 = currW.get(iV0);
+				int w1 = currW.get(iV1);
+
+				neighborNorm2 -= (w0 * w0 + w1 * w1);
+
+				int edgeDir0 = _transposeIncidenceMatrix.get(iV0, iE);
+				int edgeDir1 = _transposeIncidenceMatrix.get(iV1, iE);
+
+				w0 += edgeDir0 == -1 ? 2 * edgeWeight : -2 * edgeWeight;
+				w1 += edgeDir1 == -1 ? 2 * edgeWeight : -2 * edgeWeight;
+
+				neighborNorm2 += w0 * w0 + w1 * w1;
+
+				_currentW.setSquareNorm(neighborNorm2);
+
+				currW.set(iV0, w0);
+				currW.set(iV1, w1);
+
+				_transposeIncidenceMatrix.invert(iV0, iE);
+				_transposeIncidenceMatrix.invert(iV1, iE);
 		}
 	}
 	
@@ -139,8 +199,7 @@ public class FormIntegratorGRASP {
 			int alpha = ThreadLocalRandom.current().nextInt(1, _params.getAlphaMax() + 1);
 			int beta = ThreadLocalRandom.current().nextInt(1, _params.getBetaMax() + 1);
 			VecInt[] neigbors = generateNeighbors(alpha, beta);
-			int bestNeighbor = findBestNeighbor(neigbors);
-			setCurrentW(neigbors, bestNeighbor);
+			setBestNeighbor(neigbors);
 			i++;
 		}
 	}

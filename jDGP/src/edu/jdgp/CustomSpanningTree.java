@@ -15,6 +15,15 @@ public class CustomSpanningTree {
 			_totalWeight = 0;
 		}
 
+		public WeightedGraph(Graph graph, VecInt weights) {
+			super();
+			_edges = graph._edges;
+			_vertexEdges = graph._vertexEdges;
+			_nV = graph._nV;
+			_nE = graph._nE;
+			_edgeWeights = weights;
+		}
+
 		public void erase() {
 			super.erase();
 			_edgeWeights = new VecInt(getNumberOfVertices()); // estimativamente lo creo del tamano de la cantidad de nodos 
