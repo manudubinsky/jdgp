@@ -1,8 +1,8 @@
-package jdgp;
+package edu.jdgp;
 
-import jdgp.DGP.Graph;
-import jdgp.DGP.VecFloat;
-import jdgp.DGP.VecInt;
+import edu.jdgp.DGP.Graph;
+import edu.jdgp.DGP.VecFloat;
+import edu.jdgp.DGP.VecInt;
 
 /*
  * Implementacion matriz laplaciana.
@@ -16,6 +16,7 @@ import jdgp.DGP.VecInt;
 
 public class LaplacianMatrix {
 	private int _N;
+	private VecInt _diagValues; // los valores de la diagonal
 	private VecInt[] _offDiagIndices; //elementos que están presentes o su complemento (dependiendo del valor de inverted)
 	private boolean[] _invertedSet; //para cada fila de la matriz se asocia un flag que indica si su conjunto de índices es directo o complementario
 	
@@ -45,6 +46,7 @@ public class LaplacianMatrix {
 	}
 
 	private void _init() {
+		_diagValues = new VecInt(_N, 0);
 		_offDiagIndices = new VecInt[_N];
 		_invertedSet = new boolean[_N];
 	}
@@ -59,9 +61,11 @@ public class LaplacianMatrix {
 			}
 			if (get(row, col) == 0) {
 				if (_offDiagIndices[row] == null) {
-					_offDiagIndices[row] = new VecInt(1);
+					_offDiagIndices[row] = new VecInt(_N - row - 1); //para que no haya resizing
 				}
-				_offDiagIndices[row].pushBack(col);				
+				_offDiagIndices[row].pushBack(col);
+				_diagValues.inc(row);
+				_diagValues.inc(col);
 			}
 		}
 	}
@@ -82,6 +86,12 @@ public class LaplacianMatrix {
 					}
 				}
 				_invertedSet[i] = true;
+			} else if (_offDiagIndices[i] != null) {
+				int[] values = new int[_offDiagIndices[i].size()];
+				for (int j = 0; j < _offDiagIndices[i].size(); j++) {
+					values[j] = _offDiagIndices[i].get(j);
+				}
+				_offDiagIndices[i] = new VecInt(values);
 			}
 		}
 	}
@@ -94,14 +104,7 @@ public class LaplacianMatrix {
 			col = aux;
 		}		
 		if (row == col) { //elemento de la diagonal hay que sumar según corresponda
-			if (_offDiagIndices[row] != null) {
-				value = !_invertedSet[row] ? 
-							_offDiagIndices[row].size() : 
-								_N - row - 1 - _offDiagIndices[row].size();
-			}
-			for (int i = 0; i < row; i++) {
-				value += get(i, col) == -1 ? 1 : 0; 
-			}
+			value = _diagValues.get(row);
 		} else if (_offDiagIndices[row] != null) {
 			int index = -1;
 			for (int i = 0; i < _offDiagIndices[row].size() && index < 0; i++) {
@@ -114,16 +117,45 @@ public class LaplacianMatrix {
 		return value;
 	}
 
+	private void log(int row, int[] idx) {
+		System.out.println("i: " + row);
+		StringBuffer s = new StringBuffer();
+		for (int i = 0; i < idx.length; i++) {
+			s.append(" " + idx[i]);
+		}
+		System.out.println(s);
+	}
+	
 	public VecFloat multiplyByVector(VecFloat v) {
-	  VecFloat resultVec = new VecFloat(_N, 0);		  
-	  for (int i = 0; i < _colIndices.length; i++) {
-		  float value = 0;
-		  for (int j = 0; j < _colIndices[i].size(); j++) {
-			  value += _values[i].get(j) * v.get(_colIndices[i].get(j));
-		  }
-		  resultVec.set(i, value);
-	  }
-	  return resultVec;
+		float[] resultVec = new float[_N];
+		float[] vecValues = v.getVec();
+		int[] indexes;
+		for (int i = 0; i < _N; i++) {
+			if (_offDiagIndices[i] != null) {
+				if (!_invertedSet[i]) {
+					indexes = _offDiagIndices[i].getVec();
+				} else {
+					boolean[] complement = new boolean[_N]; //se inicializan en false
+					for (int j = 0; j < _offDiagIndices[i].size(); j++) {
+						complement[_offDiagIndices[i].get(j)] = true;
+					}
+					int complementElems = _N - (i + 1) - _offDiagIndices[i].size();
+					indexes = new int[complementElems];
+					for (int j = i+1; j < _N; j++) {
+						if (!complement[j]) {
+							indexes[j-(i+1)] = j;
+						}
+					}
+				}
+				//(i, indexes);
+				for (int j = 0; j < indexes.length; j++) {
+					resultVec[i] -= vecValues[indexes[j]];
+					resultVec[indexes[j]] -= vecValues[i];
+				}
+			}
+			resultVec[i] += (float)_diagValues.get(i) * vecValues[i];
+		}
+		return new VecFloat(resultVec);
 	}
 
 	public void dump() {
@@ -145,16 +177,35 @@ public class LaplacianMatrix {
 			System.out.println(s);
 		}
 	}
+
+	public static void main(String[] args) throws Exception {
+		LaplacianMatrix m = new LaplacianMatrix(Graph.buildCompleteGraph(1000));
+		m.compact();
+		VecFloat v = new VecFloat(1000, 1);
+		System.out.println("start");
+		long start = System.nanoTime();
+		m.multiplyByVector(v);
+		long end = System.nanoTime();
+		System.out.println("end - delta: " + (end - start));
+		/*
+		for (int i = 0; i < 500; i++) {
+			System.out.println(i);
+			LaplacianMatrix m = new LaplacianMatrix(Graph.buildCompleteGraph(i));
+			m.compact();
+			VecFloat v = new VecFloat(i, 1);
+			m.multiplyByVector(v);
+		}
+		*/
+	}
+
 /*
 	public static void main(String[] args) throws Exception {
 		LaplacianMatrix m = new LaplacianMatrix(5);
 		m.set(0,1);
 		m.set(0,2);
-		m.set(1,0);
-		m.set(1,1);
 		m.set(1,2);
 		m.set(1,3);
-		// m.set(1,4);
+		m.set(1,4);
 		m.dump();
 		m.compact();
 		m.dump();
@@ -166,13 +217,19 @@ public class LaplacianMatrix {
 			System.out.println(s);
 		}
 	}
-	*/
+*/
+/*
 	public static void main(String[] args) throws Exception {
 		LaplacianMatrix m = new LaplacianMatrix(Graph.buildCompleteGraph(5));
-		m.dump();
 		m.dumpMatrix();
 		m.compact();
 		m.dump();
+		m.compact();
+		m.dump();
 		m.dumpMatrix();
+		VecFloat v = new VecFloat(5, 1);
+		v.dump();
+		m.multiplyByVector(v).dump();
 	}
+*/
 }

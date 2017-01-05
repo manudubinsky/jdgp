@@ -1,5 +1,6 @@
 package edu.jdgp;
 
+import edu.jdgp.DGP.Graph;
 import edu.jdgp.DGP.SparseMatrix;
 import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecFloat;
@@ -10,6 +11,29 @@ import edu.jdgp.DGP.SparseMatrixInt;
 public class ConjugateGradient {
 	
 	public static VecFloat execute(SparseMatrix A, VecFloat b, VecFloat xInitial, float delta) throws Exception {
+		//A.dump(); b.dump();
+		VecFloat x = xInitial;
+		VecFloat r = b.clone();
+		r.subtract(A.multiplyByVector(x));
+		VecFloat p = r.clone();
+		//x.dump(); r.dump(); p.dump();
+		int dim = A.getRows();
+		int i = 0;		
+		while (A.multiplyByVector(x).subtract(b).squareNorm() > delta && i < dim) {
+			VecFloat Ap = A.multiplyByVector(p);
+			float alfa = r.squareNorm()/p.innerProd(Ap);
+			x.addMultiple(p, alfa);
+			VecFloat rNext = r.clone();
+			rNext.addMultiple(Ap, -alfa);
+			float beta = rNext.squareNorm()/r.squareNorm();
+			p.multiplyByScalar(beta).add(rNext);
+			r = rNext.clone();
+			i++;
+		}
+		return x;
+	}
+
+	public static VecFloat execute(LaplacianMatrix A, VecFloat b, VecFloat xInitial, float delta) throws Exception {
 		//A.dump(); b.dump();
 		VecFloat x = xInitial;
 		VecFloat r = b.clone();
@@ -51,7 +75,7 @@ A = [10, -1, 2, 0;
 
 b = [6, 25, -11, 15]'
 */
-
+/*
 	public static void main(String[] args) throws Exception {
 		SparseMatrix A = new SparseMatrix(4);
 		A.set(0, 0, 10); A.set(0, 1, -1); A.set(0, 2, 2);  A.set(0, 3, 0);
@@ -62,4 +86,13 @@ b = [6, 25, -11, 15]'
 		b.pushBack(6); b.pushBack(25); b.pushBack(-11); b.pushBack(15);
 		ConjugateGradient.execute(A,b).dump();
 	}
+*/
+	public static void main(String[] args) throws Exception {
+		Graph g = Graph.buildCompleteGraph(5);
+		VecInt b = new VecInt(5);
+		//g.buildLaplacianMatrix().dump();
+		//b.dump();
+		ConjugateGradient.execute(g.buildLaplacianMatrix(),b).dump();
+	}
+
 }

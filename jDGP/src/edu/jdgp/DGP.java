@@ -28,6 +28,11 @@ public class DGP extends DGP_h
 		_reset();
 	}
 
+	public VecInt(int[] vec) {
+		_vec = vec;
+		_size = _vecLen = vec.length;
+	}
+
 	public VecInt(int N, int initValue) {
 		_vecLen = N;
 		init(initValue);
@@ -115,6 +120,19 @@ public class DGP extends DGP_h
 		_vec[j] = vj;
 	}
 
+	public void add(int j, int vj) throws ArrayIndexOutOfBoundsException {
+		if (j < 0 || j >= _size)
+			throw new ArrayIndexOutOfBoundsException();
+		_vec[j] += vj;
+	}
+	
+	public void inc(int j) throws ArrayIndexOutOfBoundsException {
+		if (j < 0 || j >= _size)
+			throw new ArrayIndexOutOfBoundsException();
+		_vec[j]++;
+	}
+
+
 	public void swap(int i, int j) throws ArrayIndexOutOfBoundsException {
 		if (i < 0 || i >= _size || j < 0 || j >= _size)
 			throw new ArrayIndexOutOfBoundsException();
@@ -143,10 +161,15 @@ public class DGP extends DGP_h
 	
 	public void init(int initValue) {
 		_reset();
-		for (int i = 0; i < _vecLen; i++) {
-			pushBack(initValue);
+		if (initValue == 0) { // el dafault es 0
+			_size = _vecLen;
+		} else {
+			for (int i = 0; i < _vecLen; i++) {
+				pushBack(initValue);
+			}
 		}
 	}
+
 	
 	public boolean contains(int value) {
 		boolean found = false;
@@ -206,6 +229,17 @@ public class DGP extends DGP_h
 	public VecBool(int N, boolean initValue) {
 		_vecLen = N;
 		init(initValue);
+	}
+
+	public void init(boolean initValue) {
+		_reset();
+		if (initValue == false) { // el dafault es false
+			_size = _vecLen;
+		} else {
+			for (int i = 0; i < _vecLen; i++) {
+				pushBack(initValue);
+			}
+		}
 	}
 
 	private void _reset() {
@@ -293,14 +327,7 @@ public class DGP extends DGP_h
 	public boolean[] getVec() {
 		return _vec;
 	}
-	
-	public void init(boolean initValue) {
-		_reset();
-		for (int i = 0; i < _vecLen; i++) {
-			pushBack(initValue);
-		}
-	}
-	
+		
   }
 
 
@@ -331,6 +358,11 @@ public class DGP extends DGP_h
 	public VecFloat(int N) {
 		_vecLen = N;
 		_reset();				
+	}
+
+	public VecFloat(float[] vec) {
+		_vec = vec;
+		_size = _vecLen = vec.length;			
 	}
 
 	public VecFloat(int N, float initValue) {
@@ -440,9 +472,19 @@ public class DGP extends DGP_h
 		_vec[j] = vj;
 	}
 
+	public void add(int j, float vj) throws ArrayIndexOutOfBoundsException {
+		if (j < 0 || j >= _size)
+			throw new ArrayIndexOutOfBoundsException();
+		_vec[j] += vj;
+	}
+
 	public void swap(VecFloat_h other) throws Exception {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public float[] getVec() {
+		return _vec;
 	}
 
 	public void dump() {
@@ -467,8 +509,12 @@ public class DGP extends DGP_h
 
 	public void init(float initValue) {
 		_reset();
-		for (int i = 0; i < _vecLen; i++) {
-			pushBack(initValue);
+		if (initValue == 0) { // el dafault es 0
+			_size = _vecLen;
+		} else {
+			for (int i = 0; i < _vecLen; i++) {
+				pushBack(initValue);
+			}
 		}
 	}
 
@@ -1221,6 +1267,10 @@ public class DGP extends DGP_h
 
 	public VecInt getVertexEdges(int iV) {
 		return _vertexEdges[iV];
+	}
+
+	public VecInt getEdges() {
+		return _edges;
 	}
 	
 	// devuelve el nodo con menor cantidad de ejes incidentes
