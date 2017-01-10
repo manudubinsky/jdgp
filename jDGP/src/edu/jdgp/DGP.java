@@ -193,8 +193,14 @@ public class DGP extends DGP_h
 		return copy;
 	}
 
+	public void invert() {
+		for (int i = 0; i < _size; i++) {
+			_vec[i] = -_vec[i];
+		}
+	}
+
 	public VecFloat toFloat() {
-		VecFloat floatCopy = new VecFloat();
+		VecFloat floatCopy = new VecFloat(_size);
 		for (int i = 0; i < _size; i++) {
 			floatCopy.pushBack((float)_vec[i]);
 		}
@@ -525,6 +531,15 @@ public class DGP extends DGP_h
 			float value = get(i);
 			set(i, value + v.get(i));
 		}
+	}
+
+	public VecFloat subtract(VecInt v) throws Exception {
+		if (_size != v.size())
+			throw new Exception("Dimensions differ! this.size:" + _size + " v.size: " + v.size());
+		for (int i = 0; i < _size; i++) {
+			_vec[i] -= (float)v.get(i);
+		}
+		return this;
 	}
 
 	public VecFloat subtract(VecFloat v) throws Exception {
@@ -2147,6 +2162,12 @@ coordIndex [
 		  return value;
 	  }
 
+	public void invertRow(int row) {
+		if (_values[row] != null) {
+			_values[row].invert();
+		}
+	}
+
 	public void invert(int row, int col) {
 		int value = 0;
 		// System.out.println("get(...) row: " + row + " col: " + col);
@@ -2289,6 +2310,17 @@ coordIndex [
 			  }
 		  }
 	  }
+	  
+	public SparseMatrixInt clone() {
+		SparseMatrixInt copy = new SparseMatrixInt(_rows);
+		for (int i = 0; i < _rows; i++) {
+			if (_colIndices[i] != null) {
+				copy._colIndices = _colIndices.clone();
+				copy._values = _values.clone();
+			}
+		}
+		return copy;  
+	}
 
   }
   

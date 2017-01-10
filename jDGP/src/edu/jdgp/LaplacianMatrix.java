@@ -127,8 +127,11 @@ public class LaplacianMatrix {
 	}
 	
 	public VecFloat multiplyByVector(VecFloat v) {
+		return multiplyByVector(v.getVec());
+	}
+
+	public VecFloat multiplyByVector(float[] vecValues) {
 		float[] resultVec = new float[_N];
-		float[] vecValues = v.getVec();
 		int[] indexes;
 		for (int i = 0; i < _N; i++) {
 			if (_offDiagIndices[i] != null) {
