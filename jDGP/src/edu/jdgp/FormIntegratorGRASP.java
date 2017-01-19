@@ -7,6 +7,7 @@ import edu.jdgp.DGP.SparseMatrix;
 import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecFloat;
 import edu.jdgp.ConjugateGradient;
+import edu.jdgp.MethodStats;
 import java.util.concurrent.ThreadLocalRandom;
 
 /*
@@ -39,39 +40,66 @@ public class FormIntegratorGRASP {
 		}		
 	}
 
-	public static class GRASPSolution {
-		private SparseMatrixInt _incidenceMatrix;
+	public class GRASPSolution {
+		private SparseMatrixInt _transposeIncidenceMatrix;
+		private VecInt _w;
 		private VecFloat _x;
-		private float _norm;
+		private int _norm;
 		
-		private GRASPSolution() {
-			
+		public GRASPSolution(SparseMatrixInt transposeIncidenceMatrix, VecInt w) {
+			this(transposeIncidenceMatrix, w, w.squareNorm());
 		}
-			
-		public GRASPSolution(LaplacianMatrix laplacianMatrix, SparseMatrixInt incidenceMatrix, VecInt edgeWeights) throws Exception {
-			_incidenceMatrix = incidenceMatrix;
-			VecFloat x = ConjugateGradient.execute(laplacianMatrix, incidenceMatrix.transpose().multiplyByVector(edgeWeights));
-			float norm = _incidenceMatrix.multiplyByVector(x).subtract(edgeWeights).squareNorm();
-		}
-		
-		public float getNorm() {
-			return _norm;
+
+		public GRASPSolution(SparseMatrixInt transposeIncidenceMatrix, VecInt w, int norm) {
+			_transposeIncidenceMatrix = transposeIncidenceMatrix;
+			_w = w;
+			_norm = norm;
 		}
 		
 		public SparseMatrixInt getIncidenceMatrix() {
-			return _incidenceMatrix;
+			return _transposeIncidenceMatrix;
 		}
 
+		public VecInt getW() {
+			return _w;
+		}
+
+		public void calculateW(VecInt weights) {
+			_w = _transposeIncidenceMatrix.multiplyByVector(weights);
+		}
+
+		public int getNorm() {
+			return _norm;
+		}
+
+		public void setNorm(int norm) { // para no tener que recalcularla permitimos setear
+			_norm = norm;
+		}
+
+		public void solve(LaplacianMatrix laplacianMatrix, VecInt weights) throws Exception {
+			VecInt w = _transposeIncidenceMatrix.multiplyByVector(weights);
+			_x = ConjugateGradient.execute(laplacianMatrix, w);
+		}
+
+		public float verify(VecInt weights) throws Exception {
+			return _transposeIncidenceMatrix.transpose().multiplyByVector(_x).subtract(weights).squareNorm();
+		}
+		
 		public VecFloat getX() {
 			return _x;
 		}
 
 		public GRASPSolution clone() {
-			GRASPSolution copy = new GRASPSolution();
-			copy._incidenceMatrix = _incidenceMatrix.clone();
-			copy._x = _x.clone();
-			copy._norm = _norm;
-			return copy;
+			return new GRASPSolution(_transposeIncidenceMatrix.clone(), _w.clone(), _norm);
+		}
+
+		public void dump() {
+			System.out.println("norm: " + _norm);
+			_transposeIncidenceMatrix.transpose().dump();
+			_w.dump();
+			if (_x != null) {
+				_x.dump();
+			}
 		}
 
 	}
@@ -80,14 +108,19 @@ public class FormIntegratorGRASP {
 	private WeightedGraph _graph;
 	private GRASPSolution _current;
 	private GRASPSolution _globalBest;
-	private LaplacianMatrix _laplacianMatrix;
+	private int[] _deltaVec; //un vector auxiliar para evitar crearlo en cada iteracion
+	private LaplacianMatrix _auxLaplacian;
+	private MethodStats _stats;
 	
-	public FormIntegratorGRASP(WeightedGraph graph, GRASPParams params) throws Exception {
+	public FormIntegratorGRASP(WeightedGraph graph, GRASPParams params, MethodStats stats) throws Exception {
+		_stats = stats;
 		_graph = graph;
 		_params = params;
-		_laplacianMatrix = new LaplacianMatrix(graph);
-		_laplacianMatrix.compact();
-		_current = new GRASPSolution(_laplacianMatrix, _graph.buildDirectedIncidenceMatrix(), _graph.getEdgeWeights());
+		SparseMatrixInt transpose = _graph.buildDirectedIncidenceMatrix().transpose();
+		_current = new GRASPSolution(transpose, transpose.multiplyByVector(_graph.getEdgeWeights()));
+		_globalBest = _current.clone();
+		_deltaVec = new int[_graph.getNumberOfVertices()];
+		_auxLaplacian = new LaplacianMatrix(_graph);
 	}
 
 	private VecInt[] generateNeighbors(int alpha, int beta) {
@@ -96,70 +129,112 @@ public class FormIntegratorGRASP {
 		for (int i = 0; i < beta; i++) {
 			neighbors[i] = new VecInt(alpha);
 			for (int j = 0; j < alpha; j++) {
-				neighbors[i].pushBackUnique(ThreadLocalRandom.current().nextInt(1, totalEdges + 1));
+				neighbors[i].pushBackUnique(ThreadLocalRandom.current().nextInt(1, totalEdges));
 			}
 		}
 		return neighbors;
 	}
 	
 	private void setBestNeighbor(VecInt[] neighbors) throws Exception {
-		GRASPSolution localBest = null;
-		SparseMatrixInt incidenceMatrix = _current.getIncidenceMatrix().clone();
+		//_stats.start("setBestNeighbor");
+		VecInt edgesWeights = _graph.getEdgeWeights();
+		int bestNorm = -1;
+		int best = -1;
+		SparseMatrixInt transpose = _current.getIncidenceMatrix();
+		VecInt vertexIndexes = new VecInt(2 * _params.getAlphaMax());
+		VecInt w = _current.getW();
 		for (int i = 0; i < neighbors.length; i++) {
 			VecInt neighbor = neighbors[i];
+			vertexIndexes._reset();
 			for (int j = 0; j < neighbor.size(); j++) {
+				// 1) conseguir el peso del eje que se quiere invertir
 				int iE = neighbor.get(j);
-				incidenceMatrix.invertRow(iE);
+				int edgeWeight = edgesWeights.get(iE);
+				
+				int iV0 = _graph.getVertex0(iE);
+				int iV1 = _graph.getVertex1(iE);
+				
+				//2) registrar los vertices involucrados
+				vertexIndexes.pushBackUnique(iV0);
+				vertexIndexes.pushBackUnique(iV1);
+
+				//4) obtener la direccion del eje 
+				int edgeDir0 = transpose.get(iV0, iE);
+				int edgeDir1 = transpose.get(iV1, iE);
+
+				//5) calcular delta de w
+				_deltaVec[iV0] += edgeDir0 == -1 ? 2 * edgeWeight : -2 * edgeWeight;
+				_deltaVec[iV1] += edgeDir1 == -1 ? 2 * edgeWeight : -2 * edgeWeight;
 			}
-			//evaluar la solucion que induce el vecino
-			GRASPSolution neighborSolution = new GRASPSolution(_laplacianMatrix, incidenceMatrix, _graph.getEdgeWeights());
-			
-			//registrar el mejor de los vecinos para setearlo al final
-			if (localBest == null || neighborSolution.getNorm() < localBest.getNorm()) {
-				localBest = neighborSolution.clone();
+
+			int neighborNorm = _current.getNorm();
+			for (int j = 0; j < vertexIndexes.size(); j++) {
+				int iV = vertexIndexes.get(j);
+				int vertexValue = w.get(iV);
+				neighborNorm -= vertexValue * vertexValue;
+				vertexValue += _deltaVec[iV];
+				neighborNorm += vertexValue * vertexValue;
+				_deltaVec[iV] = 0; // resetear para la proxima iteracion
 			}
 			
-			//6) revertir el cambio en w para analizar el próximo vecino
-			for (int j = 0; j < neighbor.size(); j++) {
-				int iE = neighbor.get(j);
-				incidenceMatrix.invertRow(iE);
+			if (best == -1 || neighborNorm > bestNorm) {
+				best = i;
+				bestNorm = neighborNorm;
 			}
-			
 		}
-		if (_globalBest == null || localBest.getNorm() < _globalBest.getNorm()) {
-			_globalBest = localBest.clone();
+		//6) setear como siguiente al mejor vecino
+		//_current.dump();
+		_current.setNorm(bestNorm);
+		VecInt neighbor = neighbors[best];
+		for (int j = 0; j < neighbor.size(); j++) {
+			int iE = neighbor.get(j);
+			int edgeWeight = edgesWeights.get(iE);
+
+			int iV0 = _graph.getVertex0(iE);
+			int iV1 = _graph.getVertex1(iE);
+
+			// invertir la direccion del eje
+			transpose.invert(iV0, iE);
+			transpose.invert(iV1, iE);
 		}
+		_current.calculateW(edgesWeights);
+		//System.out.println("ACA!! " + bestNorm + " " + _current.getW().squareNorm());
+		//7) verificar si mejoro globalmente
+		if (bestNorm > _globalBest.getNorm()) {
+			_globalBest = _current.clone();
+			_globalBest.solve(_auxLaplacian, edgesWeights);
+			System.out.println("ACA " + bestNorm + " " + _globalBest.verify(edgesWeights));
+		}
+		//_stats.stop("setBestNeighbor");
 	}
 	
-	private void integrateInternal() throws Exception {
+	public GRASPSolution integrate() throws Exception {
 		int i = 0;
 		while (i < _params.getMaxIter()) {
-			int alpha = ThreadLocalRandom.current().nextInt(1, _params.getAlphaMax() + 1);
-			int beta = ThreadLocalRandom.current().nextInt(1, _params.getBetaMax() + 1);
-			VecInt[] neigbors = generateNeighbors(alpha, beta);
-			setBestNeighbor(neigbors);
+			int alpha = _params.getAlphaMax(); // ThreadLocalRandom.current().nextInt(0, _params.getAlphaMax()+1);
+			int beta = _params.getBetaMax();   //ThreadLocalRandom.current().nextInt(1, _params.getBetaMax() + 1);
+			
+			//System.out.println("alpha: " + alpha + " beta: " + beta);
+			VecInt[] neighbors = generateNeighbors(alpha, beta);
+			setBestNeighbor(neighbors);
 			i++;
 		}
-	}
-
-	public GRASPSolution integrate() throws Exception {
-		integrateInternal();
+		_globalBest.solve(new LaplacianMatrix(_graph), _graph.getEdgeWeights());
 		return _globalBest;
 	}
 
+//-343.33334 331.6667 11.666667
+//-343.33334 335.0 8.333334
 	public static void main(String[] args) throws Exception {
-		GRASPParams params = new GRASPParams(5, 5, 10000);
 		WeightedGraph g = new WeightedGraph(3);
 		g.insertEdge(0, 1, 1000);
 		g.insertEdge(0, 2, 30);
 		g.insertEdge(1, 2, 5);
-		FormIntegratorGRASP s = new FormIntegratorGRASP(g, params);
-		/*
-		VecInt[] n = s.generateNeighbors(5,5);
-		for (int i = 0; i < 5; i++) {
-			n[i].dump();
-		}
-		*/ 
-		//s.integrate().dump();
+		GRASPParams params = new GRASPParams(2, 1, 10);
+		FormIntegratorGRASP integ = new FormIntegratorGRASP(g, params,null);
+
+		GRASPSolution s = integ.integrate();
+		s.dump();
+		System.out.println(s.verify(g.getEdgeWeights()));
 	}
 }

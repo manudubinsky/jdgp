@@ -5,6 +5,9 @@ import edu.jdgp.CustomSpanningTree.WeightedGraph;
 import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecFloat;
 import edu.jdgp.FormIntegratorExact;
+import edu.jdgp.FormIntegratorGRASP;
+import edu.jdgp.FormIntegratorGRASP.GRASPParams;
+import edu.jdgp.FormIntegratorGRASP.GRASPSolution;
 import java.util.concurrent.ThreadLocalRandom;
 
 /*
@@ -66,6 +69,7 @@ public class WeightedGraphBuilder {
 		}
 		return new ExactForm((new WeightedGraph(g, w)), f);
 	}
+
 /*
 	public static void main(String[] args) throws Exception {
 		//3.0 2.0 10.0 9.0 4.0
@@ -77,7 +81,23 @@ public class WeightedGraphBuilder {
 		FormIntegratorExact s = new FormIntegratorExact(form.getWeightedGraph());
 		s.integrate().dump(); 
 	}
-*/	
+	*/
+	
+/*
+	public static void main(String[] args) throws Exception {
+		//0.0 -1.0 7.0 6.0 1.0
+		VecInt f = new VecInt(4);
+		f.pushBack(0); f.pushBack(-1); f.pushBack(7); f.pushBack(6); f.pushBack(1);
+		//ExactForm form = WeightedGraphBuilder.buildExactForm(Graph.buildCompleteGraph(5), 10) ;
+		ExactForm form = WeightedGraphBuilder.buildExactForm(Graph.buildCompleteGraph(5), f) ;
+		form.dump();
+		FormIntegratorExact2 s2 = new FormIntegratorExact2(form.getWeightedGraph());
+		s2.integrate().dump(); 
+		FormIntegratorExact s = new FormIntegratorExact(form.getWeightedGraph());
+		s.integrate().dump(); 
+
+	}
+*/
 
 	public static void main(String[] args) throws Exception {		
 		for (int i = 4; i < 10; i++) {
@@ -87,8 +107,9 @@ public class WeightedGraphBuilder {
 				System.out.println("\t" + j);
 				ExactForm form = WeightedGraphBuilder.buildExactForm(Graph.buildCompleteGraph(i), 10) ;
 				//form.dump();
-				FormIntegratorExact s = new FormIntegratorExact(form.getWeightedGraph());
-				VecFloat x = s.integrate();
+				FormIntegratorExact s = new FormIntegratorExact(form.getWeightedGraph());				
+				VecFloat x = s.integrate().getX();
+				//VecFloat x = s.integrate();
 				VecFloat origValues = form.getNodeValues().toFloat();
 				if (!x.subtract(origValues).allEqual() && !x.addMultiple(origValues,2).allEqual()) {
 					origValues.dump();
@@ -97,4 +118,37 @@ public class WeightedGraphBuilder {
 			}
 		}
 	}
+	
+	/*
+	public static void main(String[] args) throws Exception {		
+		for (int i = 4; i < 100; i++) {
+			for (int j = 0; j < 20; j++) {
+				ExactForm form = WeightedGraphBuilder.buildExactForm(Graph.buildCompleteGraph(i), 10) ;
+				GRASPParams params = new GRASPParams(4, 4, 1000);
+				FormIntegratorGRASP integ = new FormIntegratorGRASP(form.getWeightedGraph(), params);
+				GRASPSolution s = integ.integrate();
+				VecInt weights = form.getWeightedGraph().getEdgeWeights();
+				float q = weights.toFloat().squareNorm();
+				float p = s.getIncidenceMatrix().multiplyByVector(s.getX()).subtract(weights).squareNorm();
+				System.out.println("(" + i + ", " + j + "): "  + p/q);
+			}
+		}
+	}
+	*/ 
+/*
+	public static void main(String[] args) throws Exception {
+		int i = 30;
+		int edgesCnt =  i * (i - 1) / 2;
+		ExactForm form = WeightedGraphBuilder.buildExactForm(Graph.buildCompleteGraph(i), 10);
+		GRASPParams params = new GRASPParams(edgesCnt / 300, 20, 1000);
+		FormIntegratorGRASP integ = new FormIntegratorGRASP(form.getWeightedGraph(), params);
+		long start = System.nanoTime();
+		GRASPSolution s = integ.integrate();
+		long end = System.nanoTime();
+		VecInt weights = form.getWeightedGraph().getEdgeWeights();
+		float q = weights.toFloat().squareNorm();
+		float p = s.getIncidenceMatrix().multiplyByVector(s.getX()).subtract(weights).squareNorm();
+		System.out.println("end - delta: " + (end - start) + " quot: " + p/q);
+	}
+*/
 }

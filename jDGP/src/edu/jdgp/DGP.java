@@ -38,7 +38,7 @@ public class DGP extends DGP_h
 		init(initValue);
 	}
 
-	private void _reset() {
+	public void _reset() {
 		_vec = new int[_vecLen];
 		_size = 0;
 	}
@@ -178,6 +178,22 @@ public class DGP extends DGP_h
 				found = true;
 		}
 		return found;
+	}
+
+	public int normOne() {
+		int value = 0;
+		for (int i = 0; i < _size; i++) {
+			value += _vec[i] >= 0 ? _vec[i] : -_vec[i];
+		}
+		return value;
+	}
+
+	public int squareNorm() {
+		int value = 0;
+		for (int i = 0; i < _size; i++) {
+			value += _vec[i] * _vec[i];
+		}
+		return value;
 	}
 
 	public void pushBackUnique(int value) {
@@ -2122,6 +2138,7 @@ coordIndex [
 	  }
 	  
 	public void set(int row, int col, int value) {
+		//System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
 		if (_colIndices[row] == null) {
 		  _colIndices[row] = new VecInt(1);
 		  _values[row] = new VecInt(1);
@@ -2315,10 +2332,11 @@ coordIndex [
 		SparseMatrixInt copy = new SparseMatrixInt(_rows);
 		for (int i = 0; i < _rows; i++) {
 			if (_colIndices[i] != null) {
-				copy._colIndices = _colIndices.clone();
-				copy._values = _values.clone();
+				copy._colIndices[i] = _colIndices[i].clone();
+				copy._values[i] = _values[i].clone();
 			}
 		}
+		copy._cols = _cols;
 		return copy;  
 	}
 
