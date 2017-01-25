@@ -8,6 +8,7 @@ import edu.jdgp.FormIntegratorExact;
 import edu.jdgp.FormIntegratorGRASP;
 import edu.jdgp.FormIntegratorGRASP.GRASPParams;
 import edu.jdgp.FormIntegratorGRASP.GRASPSolution;
+import edu.jdgp.ConjugateGradient;
 import java.util.concurrent.ThreadLocalRandom;
 
 /*
@@ -98,7 +99,7 @@ public class WeightedGraphBuilder {
 
 	}
 */
-
+/*
 	public static void main(String[] args) throws Exception {		
 		for (int i = 4; i < 10; i++) {
 			System.out.println(i);
@@ -118,7 +119,7 @@ public class WeightedGraphBuilder {
 			}
 		}
 	}
-	
+*/	
 	/*
 	public static void main(String[] args) throws Exception {		
 		for (int i = 4; i < 100; i++) {
@@ -151,4 +152,26 @@ public class WeightedGraphBuilder {
 		System.out.println("end - delta: " + (end - start) + " quot: " + p/q);
 	}
 */
+
+	public static void main(String[] args) throws Exception {
+		//3 (0) 5 (1) 8 (2) 4 (3)
+		VecInt f = new VecInt(4);
+		f.pushBack(3); f.pushBack(5); f.pushBack(8); f.pushBack(4);
+		ExactForm form = WeightedGraphBuilder.buildExactForm(Graph.buildCompleteBipartite(2,2), f);
+		WeightedGraph g = form.getWeightedGraph();
+		LaplacianMatrix m = new LaplacianMatrix(g);
+		m.compact();
+		VecFloat x = ConjugateGradient.execute(m, g.getEdgeWeights());
+		x.dump();
+		m.dumpMatrix();
+		//g.getEdgeWeights().dump();
+		f.toFloat().dump();
+		m.multiplyByVector(f.toFloat()).dump();
+		m.multiplyByVector(x).dump();
+/*		f.dump();
+		x.dump();
+		x.subtract(f).dump();
+		x.addMultiple(f.toFloat(), 2).dump();
+*/	}
+
 }

@@ -148,7 +148,7 @@ public class DGP extends DGP_h
 		System.out.println("*****");
 		System.out.println("dump() _vecLen: " + _vecLen + " _size: " + _size);
 		for (int i = 0; i < _vecLen; i++) {
-			System.out.print(" " + _vec[i]);
+			System.out.print(" " + _vec[i] + " ("+i+")");
 		}
 		System.out.println("");
 		System.out.println("*****");
@@ -540,13 +540,14 @@ public class DGP extends DGP_h
 		}
 	}
 
-	public void add(VecFloat v) throws Exception {
+	public VecFloat add(VecFloat v) throws Exception {
 		if (_size != v.size())
 			throw new Exception("Dimensions differ! this.size:" + _size + " v.size: " + v.size());
 		for (int i = 0; i < _size; i++) {
 			float value = get(i);
 			set(i, value + v.get(i));
 		}
+		return this;
 	}
 
 	public VecFloat subtract(VecInt v) throws Exception {

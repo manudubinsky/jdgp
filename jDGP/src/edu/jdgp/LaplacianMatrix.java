@@ -136,6 +136,8 @@ public class LaplacianMatrix {
 		for (int i = 0; i < _N; i++) {
 			if (_offDiagIndices[i] != null) {
 				if (!_invertedSet[i]) {
+					//System.out.println("not inverted! " + _offDiagIndices[i].size());
+					//_offDiagIndices[i].dump();
 					indexes = _offDiagIndices[i].getVec();
 				} else {
 					boolean[] complement = new boolean[_N]; //se inicializan en false
@@ -143,10 +145,14 @@ public class LaplacianMatrix {
 						complement[_offDiagIndices[i].get(j)] = true;
 					}
 					int complementElems = _N - (i + 1) - _offDiagIndices[i].size();
+					//System.out.println("complementElems: " + complementElems);
 					indexes = new int[complementElems];
+					int k = 0;
 					for (int j = i+1; j < _N; j++) {
+						//System.out.println(" i: " + i + " j: " + j + " complement[j]: " + complement[j]);
 						if (!complement[j]) {
-							indexes[j-(i+1)] = j;
+							//System.out.println("j-(i+1): " + (j-(i+1)) + " i: " + i + " j: " + j);
+							indexes[k++] = j;
 						}
 					}
 				}
@@ -156,7 +162,9 @@ public class LaplacianMatrix {
 					resultVec[indexes[j]] -= vecValues[i];
 				}
 			}
+			//System.out.println("ANTES i: " + i + " " + resultVec[i]);
 			resultVec[i] += (float)_diagValues.get(i) * vecValues[i];
+			//System.out.println("DESPUES i: " + i + " " + resultVec[i]);
 		}
 		return new VecFloat(resultVec);
 	}
@@ -172,9 +180,9 @@ public class LaplacianMatrix {
 	}
 
 	public void dumpMatrix() {
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < _N; i++) {
 			StringBuffer s = new StringBuffer();
-			for (int j = 0; j < 5; j++) {
+			for (int j = 0; j < _N; j++) {
 				s.append(" " + get(i, j));
 			}
 			System.out.println(s);

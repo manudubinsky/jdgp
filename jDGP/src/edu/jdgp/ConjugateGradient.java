@@ -268,6 +268,7 @@ dump() _vecLen: 30 _size: 30
 		}
 	}
 */
+/*
 	public static void main(String[] args) throws Exception {
 		int N = 1000;
 		Graph g = Graph.buildCompleteGraph(N);
@@ -284,6 +285,17 @@ dump() _vecLen: 30 _size: 30
 		VecFloat diffLaplacian = b.subtract(m.multiplyByVector(xLaplacian));
 		float normLaplacian = diffLaplacian.squareNorm();
 		System.out.println(" normLaplacian: " + normLaplacian + " end - delta: " + (end - start)/1000000);
+	}
+*/
+// 5 (0) 1 (1) 3 (2) 1 (3)
+	public static void main(String[] args) throws Exception {
+		Graph g = Graph.buildCompleteBipartite(2,2);
+		SparseMatrixInt A = g.buildLaplacianMatrix();
+		VecInt b = new VecInt(4);
+		b.pushBack(5); b.pushBack(1); b.pushBack(3); b.pushBack(1);
+		A.dump();
+		b.dump();
+		ConjugateGradient.execute(A,b).dump();
 	}
 
 }
