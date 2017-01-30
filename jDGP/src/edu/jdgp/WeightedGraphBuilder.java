@@ -5,9 +5,11 @@ import edu.jdgp.CustomSpanningTree.WeightedGraph;
 import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecFloat;
 import edu.jdgp.FormIntegratorExact;
+/*
 import edu.jdgp.FormIntegratorGRASP;
 import edu.jdgp.FormIntegratorGRASP.GRASPParams;
 import edu.jdgp.FormIntegratorGRASP.GRASPSolution;
+*/ 
 import edu.jdgp.ConjugateGradient;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -153,6 +155,7 @@ public class WeightedGraphBuilder {
 	}
 */
 
+/*
 	public static void main(String[] args) throws Exception {
 		//3 (0) 5 (1) 8 (2) 4 (3)
 		VecInt f = new VecInt(4);
@@ -168,10 +171,13 @@ public class WeightedGraphBuilder {
 		f.toFloat().dump();
 		m.multiplyByVector(f.toFloat()).dump();
 		m.multiplyByVector(x).dump();
-/*		f.dump();
-		x.dump();
-		x.subtract(f).dump();
-		x.addMultiple(f.toFloat(), 2).dump();
-*/	}
-
+	}
+*/
+	public static void main(String[] args) throws Exception {
+		Graph g = Graph.buildCycleGraph(10);
+		int[] degrees = g.getDegrees();
+		for (int i = 0; i < degrees.length; i++) {
+			System.out.println(i + ": " + degrees[i]);
+		}
+	}
 }

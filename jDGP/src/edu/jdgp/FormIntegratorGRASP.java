@@ -118,22 +118,18 @@ public class FormIntegratorGRASP {
 	private GRASPSolution _current;
 	private GRASPSolution _globalBest;
 	private int[] _deltaVec; //un vector auxiliar para evitar crearlo en cada iteracion
-	private LaplacianMatrix _auxLaplacian;
+	private int[] _degrees;
 	private MethodStats _stats;
 	
 	public FormIntegratorGRASP(WeightedGraph graph, GRASPParams params, MethodStats stats) throws Exception {
 		_stats = stats;
 		_graph = graph;
 		_params = params;
+		_degrees = graph.getDegrees();
 		SparseMatrixInt transpose = _graph.buildDirectedIncidenceMatrix().transpose();
 		_current = new GRASPSolution(transpose, transpose.multiplyByVector(_graph.getEdgeWeights()));
 		_globalBest = _current.clone();
 		_deltaVec = new int[_graph.getNumberOfVertices()];
-		_auxLaplacian = new LaplacianMatrix(_graph);
-		_auxLaplacian.compact();
-		//System.out.println("*****INIT _globalBest: " + _globalBest.getNorm());
-		//_graph.getEdgeWeights().dump();
-		//_globalBest.dump();
 	}
 
 	private VecInt[] generateNeighbors(int alpha, int beta) {
@@ -273,10 +269,10 @@ public class FormIntegratorGRASP {
 		}
 		LaplacianMatrix mm = new LaplacianMatrix(_graph);
 		_globalBest.solve(mm, _graph.getEdgeWeights());
-		System.out.println("ACSAAAA 1: " +  _globalBest.verify(_graph.getEdgeWeights()));
+		//System.out.println("ACSAAAA 1: " +  _globalBest.verify(_graph.getEdgeWeights()));
 		mm.compact();
 		_globalBest.solve(mm, _graph.getEdgeWeights());
-		System.out.println("ACSAAAA 2: " +  _globalBest.verify(_graph.getEdgeWeights()));
+		//System.out.println("ACSAAAA 2: " +  _globalBest.verify(_graph.getEdgeWeights()));
 
 		return _globalBest;
 	}

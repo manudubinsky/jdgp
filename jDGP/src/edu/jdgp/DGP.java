@@ -1279,6 +1279,14 @@ public class DGP extends DGP_h
 		return index;
 	}
 
+	public int[] getDegrees() {
+		int[] degrees = new int[_nV];
+		for (int i = 0; i < _nV; i++) {
+			degrees[i] = _vertexEdges[i].size();
+		}
+		return degrees;
+	}
+	
 	public int getVertex0(int iE) {
 		return (0 <= iE && iE < _nE) ? _edges.get(iE * 2) : -1;
 	}
