@@ -7,6 +7,7 @@ import edu.jdgp.FormIntegratorExact;
 import edu.jdgp.FormIntegratorGRASP;
 import edu.jdgp.FormIntegratorGRASP.GRASPParams;
 import edu.jdgp.FormIntegratorGRASP.GRASPSolution;
+import edu.jdgp.WrlReader;
 import edu.jdgp.WeightedGraphBuilder;
 import edu.jdgp.WeightedGraphBuilder.ExactForm;
 import edu.jdgp.MethodStats;
@@ -46,15 +47,17 @@ public class GRASPTests {
 	}
 
 	public void test1(Graph g) throws Exception {
+		System.out.println("begin test1");
 		MethodStats stats = new MethodStats(20);
 		ExactForm form = WeightedGraphBuilder.buildExactForm(g, 10);
-		GRASPParams params = new GRASPParams(2, 10, 10000);
+		System.out.println("built weighted graph");
+		GRASPParams params = new GRASPParams(2, 10, 20000);
 		FormIntegratorGRASP integ = new FormIntegratorGRASP(form.getWeightedGraph(), params, stats);
 		stats.start("completeTest1");
 		GRASPSolution s = integ.integrate();
 		stats.stop("completeTest1");
 		VecInt weights = form.getWeightedGraph().getEdgeWeights();
-		float p = s.verify(weights);
+		float p = s.verify();
 		float q = weights.toFloat().squareNorm();
 		stats.dump();
 		System.out.println("p: " + p + " q: " + q + " quot: " + p/q);
@@ -128,13 +131,20 @@ public class GRASPTests {
 	}
 
 	public void bipartiteGraphs() throws Exception {
-		bipartiteGraphsTest1(2, 2);
+		bipartiteGraphsTest1(10, 10);
 	}
 
+	public void wrlGraph() throws Exception {
+		System.out.println("begin wrlGraph");
+		WrlReader reader = new WrlReader("/home/manuel/doctorado/jdgp/jDGP/img/venusv.wrl");
+		Graph g = reader.getMesh().getGraph();
+		test1(g);
+	}
 
 	public static void main(String[] args) throws Exception {
 		GRASPTests tests = new GRASPTests();
-		tests.completeGraphs();
+		tests.wrlGraph();
+		//tests.completeGraphs();
 		//tests.cycleGraphs();
 		//tests.bipartiteGraphs();
 	}

@@ -43,19 +43,42 @@ public class FormIntegratorGRASP {
 
 	public class GRASPSolution {
 		private SparseMatrixInt _transposeIncidenceMatrix;
-		private VecInt _w;
-		private VecFloat _x;
-		private int _norm;
+		private VecInt _w; // D^t f
+		private VecFloat _x; // D _x = f
+		private float _pseudoNorm; //ver apunte pdf
 		private float _verif;
-		
-		public GRASPSolution(SparseMatrixInt transposeIncidenceMatrix, VecInt w) {
-			this(transposeIncidenceMatrix, w, w.squareNorm());
+
+		public GRASPSolution(SparseMatrixInt transposeIncidenceMatrix) {
+			_transposeIncidenceMatrix = transposeIncidenceMatrix;
+			calculateW();
+			calculatePseudoNorm();
 		}
 
-		public GRASPSolution(SparseMatrixInt transposeIncidenceMatrix, VecInt w, int norm) {
+		public GRASPSolution(SparseMatrixInt transposeIncidenceMatrix, VecInt w) {
 			_transposeIncidenceMatrix = transposeIncidenceMatrix;
 			_w = w;
-			_norm = norm;			
+			calculatePseudoNorm();
+		}
+
+		public GRASPSolution(SparseMatrixInt transposeIncidenceMatrix, VecInt w, float pseudoNorm) {
+			_transposeIncidenceMatrix = transposeIncidenceMatrix;
+			_w = w;
+			_pseudoNorm = pseudoNorm;
+		}
+
+		public void calculateW() {
+			_w = _transposeIncidenceMatrix.multiplyByVector(_graph.getEdgeWeights());
+		}
+
+		public void calculatePseudoNorm() {
+			_pseudoNorm = 0;
+			//_w.dump();
+			for (int i = 0; i < _w.size(); i++) {
+				float component = (float)_w.get(i) / (float)_degrees[i];
+				_pseudoNorm += component * component;
+				//System.out.println("ACA: " +_pseudoNorm + " " + _w.get(i) + " " + _degrees[i]);
+			}
+			//System.out.println("FIN!");
 		}
 		
 		public SparseMatrixInt getIncidenceMatrix() {
@@ -66,31 +89,27 @@ public class FormIntegratorGRASP {
 			return _w;
 		}
 
-		public void calculateW(VecInt weights) {
-			_w = _transposeIncidenceMatrix.multiplyByVector(weights);
+		public float getPseudoNorm() {
+			return _pseudoNorm;
 		}
 
-		public int getNorm() {
-			return _norm;
+		public void setPseudoNorm(float bestPseudoNorm) { // para no tener que recalcularla permitimos setear
+			_pseudoNorm = bestPseudoNorm;
 		}
 
-		public void setNorm(int norm) { // para no tener que recalcularla permitimos setear
-			_norm = norm;
-		}
-
-		public void solve(LaplacianMatrix laplacianMatrix, VecInt weights) throws Exception {
-			VecInt w = _transposeIncidenceMatrix.multiplyByVector(weights);
-			//System.out.println("ACA INIT !!!!!!!!!!!");
-			//_transposeIncidenceMatrix.dump();
-			//weights.dump();
-			//System.out.println("ACA END!!!!!!!!!!!");
+		public void solve() throws Exception {
+			LaplacianMatrix laplacianMatrix = new LaplacianMatrix(_graph);
+			laplacianMatrix.compact();
+			VecInt w = _transposeIncidenceMatrix.multiplyByVector(_graph.getEdgeWeights());
 			_x = ConjugateGradient.execute(laplacianMatrix, w);
 			_verif = -1;
 		}
 
-		public float verify(VecInt weights) throws Exception {
+		public float verify() throws Exception {
 			if (_verif == -1)
-				_verif = _transposeIncidenceMatrix.transpose().multiplyByVector(_x).subtract(weights).squareNorm();
+				_verif = _transposeIncidenceMatrix.transpose().
+							multiplyByVector(_x).subtract(_graph.getEdgeWeights()).
+								squareNorm();
 			return _verif;
 		}
 		
@@ -99,18 +118,17 @@ public class FormIntegratorGRASP {
 		}
 
 		public GRASPSolution clone() {
-			return new GRASPSolution(_transposeIncidenceMatrix.clone(), _w.clone(), _norm);
+			return new GRASPSolution(_transposeIncidenceMatrix.clone(), _w.clone(), _pseudoNorm);
 		}
 
 		public void dump() {
-			System.out.println("norm: " + _norm);
+			System.out.println("norm: " + _pseudoNorm);
 			_transposeIncidenceMatrix.transpose().dump();
 			_w.dump();
 			if (_x != null) {
 				_x.dump();
 			}
 		}
-
 	}
 	
 	private GRASPParams _params;
@@ -118,7 +136,7 @@ public class FormIntegratorGRASP {
 	private GRASPSolution _current;
 	private GRASPSolution _globalBest;
 	private int[] _deltaVec; //un vector auxiliar para evitar crearlo en cada iteracion
-	private int[] _degrees;
+	private int[] _degrees; //grados de los nodos para calcular pseudo-norm
 	private MethodStats _stats;
 	
 	public FormIntegratorGRASP(WeightedGraph graph, GRASPParams params, MethodStats stats) throws Exception {
@@ -127,9 +145,10 @@ public class FormIntegratorGRASP {
 		_params = params;
 		_degrees = graph.getDegrees();
 		SparseMatrixInt transpose = _graph.buildDirectedIncidenceMatrix().transpose();
-		_current = new GRASPSolution(transpose, transpose.multiplyByVector(_graph.getEdgeWeights()));
+		_current = new GRASPSolution(transpose);
 		_globalBest = _current.clone();
 		_deltaVec = new int[_graph.getNumberOfVertices()];
+		//_current.dump();
 	}
 
 	private VecInt[] generateNeighbors(int alpha, int beta) {
@@ -140,12 +159,11 @@ public class FormIntegratorGRASP {
 			for (int j = 0; j < alpha; j++) {
 				neighbors[i].pushBackUnique(ThreadLocalRandom.current().nextInt(1, totalEdges));
 			}
-			//System.out.println("***** i: " + i);
-			//neighbors[i].dump();
 		}
 		return neighbors;
 	}
-	
+
+/*
 	private int check(VecInt neighbor) {
 		SparseMatrixInt transpose = _current.getIncidenceMatrix();
 		for (int i = 0; i < neighbor.size(); i++) {
@@ -165,14 +183,15 @@ public class FormIntegratorGRASP {
 		}
 		return v;
 	}
-		
+*/
+	
 	private void setBestNeighbor(VecInt[] neighbors) throws Exception {
 		//_stats.start("setBestNeighbor");
 		VecInt edgesWeights = _graph.getEdgeWeights();
-		int bestNorm = -1;
+		float bestPseudoNorm = -1;
 		int best = -1;
 		SparseMatrixInt transpose = _current.getIncidenceMatrix();
-		VecInt vertexIndexes = new VecInt(2 * _params.getAlphaMax());
+		VecInt vertexIndexes = new VecInt(2 * _params.getAlphaMax()); //a lo sumo puede haber el doble de vertices que de ejes
 		VecInt w = _current.getW();
 		for (int i = 0; i < neighbors.length; i++) {
 			VecInt neighbor = neighbors[i];
@@ -203,7 +222,7 @@ public class FormIntegratorGRASP {
 				//System.out.println("DESPUES ! _deltaVec["+iV0+"]: " + _deltaVec[iV0] + " _deltaVec["+iV1+"]: " + _deltaVec[iV1]);
 			}
 
-			int neighborNorm = _current.getNorm();
+			float neighborPseudoNorm = _current.getPseudoNorm();
 			//System.out.println("*****ANTES neighborNorm: " + neighborNorm);
 			//vertexIndexes.dump();
 			for (int j = 0; j < vertexIndexes.size(); j++) {
@@ -211,28 +230,29 @@ public class FormIntegratorGRASP {
 				int vertexValue = w.get(iV);
 				//System.out.println("<1> _deltaVec["+iV+"]: " + _deltaVec[iV] + " vertexValue: " + vertexValue + " neighborNorm: " + neighborNorm);
 				//System.out.println("ANTES vertexValue: " + vertexValue);
-				neighborNorm -= vertexValue * vertexValue;
+				float component = ((float)vertexValue/(float)_degrees[iV]); // ver apunte
+				neighborPseudoNorm -= component * component;
 				//System.out.println("ANTES neighborNorm: " + neighborNorm);
 				vertexValue += _deltaVec[iV];
+				component = ((float)vertexValue/(float)_degrees[iV]);
 				//System.out.println("DESPUES vertexValue: " + vertexValue);
-				neighborNorm += vertexValue * vertexValue;
+				neighborPseudoNorm += component * component;
 				//System.out.println("<2> _deltaVec["+iV+"]: " + _deltaVec[iV] + " vertexValue: " + vertexValue + " neighborNorm: " + neighborNorm);
 				//System.out.println("DESPUES neighborNorm: " + neighborNorm);
 				_deltaVec[iV] = 0; // resetear para la proxima iteracion
 			}
 			//System.out.println("******DESPUES sneighborNorm: " + neighborNorm);
-			if (best == -1 || neighborNorm > bestNorm) {
+			if (best == -1 || neighborPseudoNorm > bestPseudoNorm) {
 				best = i;
-				bestNorm = neighborNorm;
+				bestPseudoNorm = neighborPseudoNorm;
 			}
 		}
-		//6) setear como siguiente al mejor vecino
 		//_current.dump();
-		_current.setNorm(bestNorm);
+		//_current.setPseudoNorm(bestPseudoNorm);
+		//6) setear como siguiente al mejor vecino
 		VecInt neighbor = neighbors[best];
 		for (int j = 0; j < neighbor.size(); j++) {
 			int iE = neighbor.get(j);
-			int edgeWeight = edgesWeights.get(iE);
 
 			int iV0 = _graph.getVertex0(iE);
 			int iV1 = _graph.getVertex1(iE);
@@ -241,17 +261,21 @@ public class FormIntegratorGRASP {
 			transpose.invert(iV0, iE);
 			transpose.invert(iV1, iE);
 		}
-		_current.calculateW(edgesWeights);
+		_current.calculateW();
+		_current.calculatePseudoNorm();
+		//System.out.println("ACA: bestPseudoNorm: " + bestPseudoNorm + " _current: " + _current.getPseudoNorm());
+
 		//System.out.println("ACA!! " + bestNorm + " " + _current.getW().squareNorm());
 		//7) verificar si mejoro globalmente
 		//System.out.println("******FIN bestNorm: " + bestNorm + " global: " + _globalBest.getNorm());
-		if (bestNorm > _globalBest.getNorm()) {
-			GRASPSolution auxSolution = _current.clone();
-			auxSolution.solve(_auxLaplacian, edgesWeights);
-			if (_globalBest.getX() == null || auxSolution.verify(edgesWeights) < _globalBest.verify(edgesWeights)) {
-				_globalBest = auxSolution;
-				System.out.println("ACA " + bestNorm + " " + _globalBest.verify(edgesWeights));
-			}
+		if (bestPseudoNorm > _globalBest.getPseudoNorm()) {
+			System.out.println("Entre " + _current.getPseudoNorm() + " > " + _globalBest.getPseudoNorm());
+			_globalBest = _current.clone();
+			//_globalBest.calculatePseudoNorm();
+			//System.out.println("ACA: " + _globalBest.getPseudoNorm());
+			//_globalBest.solve();
+			//float test = _globalBest.verify();
+			//System.out.println("ACA: " + test);
 		}
 		//_stats.stop("setBestNeighbor");
 	}
@@ -261,19 +285,11 @@ public class FormIntegratorGRASP {
 		while (i < _params.getMaxIter()) {
 			int alpha = _params.getAlphaMax(); // ThreadLocalRandom.current().nextInt(0, _params.getAlphaMax()+1);
 			int beta = _params.getBetaMax();   //ThreadLocalRandom.current().nextInt(1, _params.getBetaMax() + 1);
-			
-			//System.out.println("alpha: " + alpha + " beta: " + beta);
 			VecInt[] neighbors = generateNeighbors(alpha, beta);
 			setBestNeighbor(neighbors);
 			i++;
 		}
-		LaplacianMatrix mm = new LaplacianMatrix(_graph);
-		_globalBest.solve(mm, _graph.getEdgeWeights());
-		//System.out.println("ACSAAAA 1: " +  _globalBest.verify(_graph.getEdgeWeights()));
-		mm.compact();
-		_globalBest.solve(mm, _graph.getEdgeWeights());
-		//System.out.println("ACSAAAA 2: " +  _globalBest.verify(_graph.getEdgeWeights()));
-
+		_globalBest.solve();
 		return _globalBest;
 	}
 
@@ -295,25 +311,16 @@ public class FormIntegratorGRASP {
 	*/ 
 	public static void main(String[] args) throws Exception {
 		Graph g = Graph.buildCompleteGraph(100);
-		for (int j = 0; j < 50; j++) {
-			//System.out.println("***************CASO 1");
-			
+		//VecInt v = new VecInt(4);
+		//v.pushBack(0); v.pushBack(1); v.pushBack(2); v.pushBack(3);
+		for (int j = 0; j < 1; j++) {
+			//ExactForm form = WeightedGraphBuilder.buildExactForm(g, v);
 			ExactForm form = WeightedGraphBuilder.buildExactForm(g, 10);
-			GRASPParams params = new GRASPParams(10, 2, 10);
+			GRASPParams params = new GRASPParams(2, 10, 10000);
 			FormIntegratorGRASP integ = new FormIntegratorGRASP(form.getWeightedGraph(), params, null);
 			GRASPSolution s = integ.integrate();
-			VecInt weights = form.getWeightedGraph().getEdgeWeights();
 			//s.dump();
-			System.out.println(s.verify(form.getWeightedGraph().getEdgeWeights()));
-/*
-			System.out.println("***************CASO 2");
-			
-			params = new GRASPParams(2, 10, 5);
-			integ = new FormIntegratorGRASP(form.getWeightedGraph(), params, null);
-			s = integ.integrate();
-			//s.dump();
-			System.out.println(s.verify(form.getWeightedGraph().getEdgeWeights()));
-*/
+			System.out.println(s.verify());
 		}
 	}
 
