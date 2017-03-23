@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */ 
 
 public class GRASPTests {
+	public static final String sep = ",";
 	public static class GRASPTestCase {
 		private int _nodes;
 		private int _edges;
@@ -41,40 +42,45 @@ public class GRASPTests {
 		}
 		
 		public void dump() {
-			System.out.println(_nodes + "\t" + _edges + "\t" + _testCaseNum + "\t" + 
-								_maxIter + "\t" + _alpha + "\t" + _beta + "\t" + _error + "\t" + _nanoSecs/1000000);
+			System.out.println(_nodes + sep + _edges + sep + _testCaseNum + sep + 
+								_maxIter + sep + _alpha + sep + _beta + sep + 
+								_error + sep + _nanoSecs/1000000);
 		}		
 	}
 
-	public void test1(Graph g) throws Exception {
-		System.out.println("begin test1");
-		MethodStats stats = new MethodStats(20);
+	public void test1(Graph g) throws Exception { 
+		//System.out.println("begin test1");
+		//MethodStats stats = new MethodStats(20);
 		ExactForm form = WeightedGraphBuilder.buildExactForm(g, 10);
-		System.out.println("built weighted graph");
+		//System.out.println("built weighted graph");
 		GRASPParams params = new GRASPParams(2, 10, 20000);
-		FormIntegratorGRASP integ = new FormIntegratorGRASP(form.getWeightedGraph(), params, stats);
-		stats.start("completeTest1");
+		//FormIntegratorGRASP integ = new FormIntegratorGRASP(form.getWeightedGraph(), params, stats);
+		FormIntegratorGRASP integ = new FormIntegratorGRASP(form.getWeightedGraph(), params, null);
+		//stats.start("completeTest1");
 		GRASPSolution s = integ.integrate();
-		stats.stop("completeTest1");
+		//stats.stop("completeTest1");
 		VecInt weights = form.getWeightedGraph().getEdgeWeights();
 		float p = s.verify();
 		float q = weights.toFloat().squareNorm();
-		stats.dump();
-		System.out.println("p: " + p + " q: " + q + " quot: " + p/q);
-		//form.getNodeValues().dump();
-		//s.getX().dump();
-		//s.getX().subtract(form.getNodeValues()).dump();
-		//s.getX().add(form.getNodeValues().toFloat()).dump();
+		//stats.dump();
+		//System.out.println("p: " + p + " q: " + q + " quot: " + p/q);
 	}
 
-	public void completeGraphsTest1(int n) throws Exception {		
+	public void completeGraphsTest1(int n) throws Exception {
 		test1(Graph.buildCompleteGraph(n));
 	}
 
-/*
+	public void completeGraphsTest2(int n, int testCases) throws Exception {
+		Graph g = Graph.buildCompleteGraph(n);
+		for (int i = 0; i < testCases; i++) {
+			test1(g);
+		}
+	}
+
 	public void completeGraphsParams(int nodesCnt, int testCases) throws Exception {
 		MethodStats stats = new MethodStats(20);
-		GRASPTestCase[] tests = new GRASPTestCase[10*10*testCases];
+		GRASPTestCase[] tests = new GRASPTestCase[4*testCases];
+		System.out.println("Total casos: " + (4*testCases));
 		int testNum = 0;
 		Graph g = Graph.buildCompleteGraph(nodesCnt);
 		int edgesCnt = g.getNumberOfEdges();
@@ -82,16 +88,16 @@ public class GRASPTests {
 			ExactForm form = WeightedGraphBuilder.buildExactForm(g, 10);
 			VecInt weights = form.getWeightedGraph().getEdgeWeights();
 			//weights.dump();
-			for (int alpha = 1; alpha <= 10; alpha++) {
-				for (int beta = 1; beta <= 10; beta++) {
-					System.out.println(test + " " + alpha + " " + beta);
-					for (int iter = 10000; iter <= 10000; iter+=10000) {
+			for (int alpha = 1; alpha <= 4; alpha++) {
+				for (int beta = 10; beta <= 10; beta+=2) {
+					System.out.println(testNum + " " + test + " " + alpha + " " + beta);
+					for (int iter = 20000; iter <= 20000; iter+=10000) {
 						GRASPParams params = new GRASPParams(alpha, beta, iter);
 						FormIntegratorGRASP integ = new FormIntegratorGRASP(form.getWeightedGraph(), params, stats);
 						long start = System.nanoTime();
 						GRASPSolution s = integ.integrate();
 						long delta = System.nanoTime() - start;
-						float p = s.verify(weights);
+						float p = s.verify();
 						float q = weights.toFloat().squareNorm();
 						//System.out.println("***********" + p/q);
 						tests[testNum++] = new GRASPTestCase(g.getNumberOfVertices(),
@@ -112,18 +118,27 @@ public class GRASPTests {
 		}
 		stats.dump();
 	}
-*/	
+
 	public void completeGraphs() throws Exception {
-		completeGraphsTest1(100);
-		//completeGraphsParams(100, 1);
+		completeGraphsTest2(400, 20);
+		//completeGraphsTest1(100);
+		//completeGraphsParams(100, 50);
 	}
 
 	public void cycleGraphsTest1(int n) throws Exception {		
 		test1(Graph.buildCycleGraph(n));
 	}
 
+	public void cycleGraphsTest2(int n, int testCases) throws Exception {
+		Graph g = Graph.buildCycleGraph(n);
+		for (int i = 0; i < testCases; i++) {
+			test1(g);
+		}
+	}
+
 	public void cycleGraphs() throws Exception {
-		cycleGraphsTest1(100);
+		//cycleGraphsTest1(2000);
+		cycleGraphsTest2(4000,20);
 	}
 
 	public void bipartiteGraphsTest1(int n, int m) throws Exception {		
@@ -143,9 +158,9 @@ public class GRASPTests {
 
 	public static void main(String[] args) throws Exception {
 		GRASPTests tests = new GRASPTests();
-		tests.wrlGraph();
+		//tests.wrlGraph();
 		//tests.completeGraphs();
-		//tests.cycleGraphs();
+		tests.cycleGraphs();
 		//tests.bipartiteGraphs();
 	}
 

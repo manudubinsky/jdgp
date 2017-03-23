@@ -268,8 +268,11 @@ public class FormIntegratorGRASP {
 		//System.out.println("ACA!! " + bestNorm + " " + _current.getW().squareNorm());
 		//7) verificar si mejoro globalmente
 		//System.out.println("******FIN bestNorm: " + bestNorm + " global: " + _globalBest.getNorm());
+		//System.out.println(_globalBest.getPseudoNorm() + " " + bestPseudoNorm);
+		
 		if (bestPseudoNorm > _globalBest.getPseudoNorm()) {
-			System.out.println("Entre " + _current.getPseudoNorm() + " > " + _globalBest.getPseudoNorm());
+			//System.out.println(_globalBest.getPseudoNorm() + " < " + bestPseudoNorm + " / " + _current.getPseudoNorm());
+			//System.out.println("Entre " + _current.getPseudoNorm() + " > " + _globalBest.getPseudoNorm());
 			_globalBest = _current.clone();
 			//_globalBest.calculatePseudoNorm();
 			//System.out.println("ACA: " + _globalBest.getPseudoNorm());
@@ -282,12 +285,19 @@ public class FormIntegratorGRASP {
 	
 	public GRASPSolution integrate() throws Exception {
 		int i = 0;
+		float weightsNorm = _graph.getEdgeWeights().toFloat().squareNorm();
+		int n = _graph.getNumberOfVertices();
 		while (i < _params.getMaxIter()) {
 			int alpha = _params.getAlphaMax(); // ThreadLocalRandom.current().nextInt(0, _params.getAlphaMax()+1);
 			int beta = _params.getBetaMax();   //ThreadLocalRandom.current().nextInt(1, _params.getBetaMax() + 1);
 			VecInt[] neighbors = generateNeighbors(alpha, beta);
 			setBestNeighbor(neighbors);
 			i++;
+			if (i % 1000 == 1) {
+				_globalBest.solve();
+				float p = _globalBest.verify();
+				System.out.println(n + "," + i + "," + p/weightsNorm + "," + _globalBest.getPseudoNorm());
+			}
 		}
 		_globalBest.solve();
 		return _globalBest;
