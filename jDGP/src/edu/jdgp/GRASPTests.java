@@ -136,6 +136,16 @@ public class GRASPTests {
 		}
 	}
 
+	public void wrlGraphTest1(Graph g) throws Exception {		
+		test1(g);
+	}
+
+	public void wrlGraphTest2(Graph g, int testCases) throws Exception {
+		for (int i = 0; i < testCases; i++) {
+			test1(g);
+		}
+	}
+
 	public void cycleGraphs() throws Exception {
 		//cycleGraphsTest1(2000);
 		cycleGraphsTest2(4000,20);
@@ -149,18 +159,21 @@ public class GRASPTests {
 		bipartiteGraphsTest1(10, 10);
 	}
 
+//venusv.wrl  -> nV: 819 nE: 2452
+//elephav.wrl -> nV: 623 nE: 1759
 	public void wrlGraph() throws Exception {
 		System.out.println("begin wrlGraph");
-		WrlReader reader = new WrlReader("/home/manuel/doctorado/jdgp/jDGP/img/venusv.wrl");
+		WrlReader reader = new WrlReader("/home/manuel/doctorado/jdgp/jDGP/img/elephav.wrl");
 		Graph g = reader.getMesh().getGraph();
-		test1(g);
+		//System.out.println("nV: " + g.getNumberOfVertices() + " nE: " + g.getNumberOfEdges());		
+		wrlGraphTest2(g, 20);
 	}
 
 	public static void main(String[] args) throws Exception {
 		GRASPTests tests = new GRASPTests();
-		//tests.wrlGraph();
+		tests.wrlGraph();
 		//tests.completeGraphs();
-		tests.cycleGraphs();
+		//tests.cycleGraphs();
 		//tests.bipartiteGraphs();
 	}
 

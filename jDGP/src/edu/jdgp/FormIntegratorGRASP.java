@@ -296,7 +296,7 @@ public class FormIntegratorGRASP {
 			if (i % 1000 == 1) {
 				_globalBest.solve();
 				float p = _globalBest.verify();
-				System.out.println(n + "," + i + "," + p/weightsNorm + "," + _globalBest.getPseudoNorm());
+				System.out.println("elephant," + i + "," + p/weightsNorm + "," + _globalBest.getPseudoNorm());
 			}
 		}
 		_globalBest.solve();
