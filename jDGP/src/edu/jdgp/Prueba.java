@@ -1,22 +1,17 @@
 package edu.jdgp;
 
 public class Prueba {
-	public static void test(int i) {
-		try {
-			System.out.println(i);
-			test(i+1);
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
+	private int i;
 	
+	public int nextVal() {
+		return i++;
+	}
+
 	public static void main(String[] args) {
 		try {
-			// test(1);
-			boolean[] flags = new boolean[10];
-			for (int i = 0; i < 10; i++) {				
-				System.out.println(flags[i]);
-			}
+			Prueba p = new Prueba();
+			System.out.println(p.nextVal());
+			System.out.println(p.nextVal());
 		} catch (Exception e) {
 			System.out.println(e);
 		}

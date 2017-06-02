@@ -7,6 +7,8 @@ import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecFloat;
 import edu.jdgp.DGP.PolygonMesh;
 
+// 1) Construcción de la matriz M = [L,B;A,I] (ver apuntes)
+// 2) Resolución del sistema lineal M [x;y] = v
 public class FormIntegrator {
 	private PolygonMesh _mesh;
 	private SparseMatrix _edgesMatrix;
@@ -15,8 +17,8 @@ public class FormIntegrator {
 		_mesh = mesh;
 		buildMatrix();
 	}
-		
-	public void buildMatrix() throws Exception {
+	
+	public void buildMatrixLA() throws Exception {
 		Graph _graph = _mesh.getGraph();
 		int numEdges = _graph.getNumberOfEdges();
 		SpanningTree spanningTree = new SpanningTree(_graph);
@@ -72,7 +74,7 @@ public class FormIntegrator {
 			PolygonMesh pm = new PolygonMesh(coord, coordIndex);
 			FormIntegrator integrator = new FormIntegrator(pm);
 			integrator.getEdgesMatrix().fullDump();
-			integrator.getEdgesMatrix().transpose().fullDump();
+			//integrator.getEdgesMatrix().transpose().fullDump();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

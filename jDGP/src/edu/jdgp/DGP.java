@@ -933,13 +933,16 @@ public class DGP extends DGP_h
 		  VecInt vertexes = new VecInt(_nV);
 		  vertexes.pushBack(0);
 		  addVertex(0);
+		  //System.out.println(_nV);
 		  while (vertexIdx < vertexes.size() && unionFind.getNumberOfParts() > 1) {
+			  //System.out.println("particiones: " + unionFind.getNumberOfParts() + " " + vertexIdx + " " + vertexes.size());
 			  int v = vertexes.get(vertexIdx++);
 			  VecInt vertexEdges = graph.getVertexEdges(v);
 			  for (int j = 0; j < vertexEdges.size() && unionFind.getNumberOfParts() > 1; j++) {
 				  int edge = vertexEdges.get(j);
 				  int neighbor = graph.getNeighbor(v, edge);
 				  if (neighbor >= 0 && unionFind.checkJoin(v, neighbor)) { // particiones distintas => agregar el eje al arbol generador
+					  //System.out.println("ACA !!! " + vertexIdx);
 						  if (addVertex(neighbor))  // vertice aun no visitado, agregar a la lista
 							  vertexes.pushBack(neighbor);
 						  _spannigTree.add(edgeIdx, minLabel(v,neighbor), -1);
@@ -949,6 +952,7 @@ public class DGP extends DGP_h
 				  }
 			  }
 		  }
+		  //System.out.println(_spannigTree.getRows() + " " + _spannigTree.getCols());
 	  }
 	  
 	  public SparseMatrix getTree () {
@@ -2042,7 +2046,9 @@ coordIndex [
 	  public void resize(int rows) {
 		  VecInt[] newColIndices = new VecInt[rows];
 		  VecFloat[] newValues = new VecFloat[rows];
+		  //System.out.println("ACA " + _colIndices.length);
 		  for (int i = 0; i < _colIndices.length; i++) {
+			  //System.out.print(i + " ");
 			  int rowSize = _colIndices[i].size();
 			  newColIndices[i] = new VecInt(rowSize,-1);
 			  newValues[i] = new VecFloat(rowSize,-1);
