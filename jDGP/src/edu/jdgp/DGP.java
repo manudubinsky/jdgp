@@ -1967,15 +1967,18 @@ coordIndex [
 	  }
 	  
 	  public void set(int row, int col, float value) {
-		  if (_colIndices[row] == null) {
-			  _colIndices[row] = new VecInt(1);
-			  _values[row] = new VecFloat(1);
+		  if (row >= 0 && row < _colIndices.length) {
+			  if (_colIndices[row] == null) {
+				  _colIndices[row] = new VecInt(1);
+				  _values[row] = new VecFloat(1);
+			  }
+			  
+			  // System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
+			  _colIndices[row].pushBack(col);
+			  _values[row].pushBack(value);
+			  if (_cols < col)
+				  _cols = col;
 		  }
-		  // System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
-		  _colIndices[row].pushBack(col);
-		  _values[row].pushBack(value);
-		  if (_cols < col)
-			  _cols = col;
 	  }
 	  
 	  public float get(int row, int col) {
@@ -2153,27 +2156,30 @@ coordIndex [
 	  }
 	  
 	public void set(int row, int col, int value) {
-		//System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
-		if (_colIndices[row] == null) {
-		  _colIndices[row] = new VecInt(1);
-		  _values[row] = new VecInt(1);
-		}
-		// System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
-		int colIndex = -1;
-		// _colIndices[row].dump();
-		for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
-		  // System.out.println("get(...) _colIndices[row].get(i): " + _colIndices[row].get(i));
-		  if (_colIndices[row].get(i) == col)
-			  colIndex = i;
-		}
-		if (colIndex >= 0 )
-			_values[row].set(colIndex,value);
-		else {
-			_colIndices[row].pushBack(col);
-			_values[row].pushBack(value);
-		}
-		if (_cols < col)
-		  _cols = col;
+		if (row >= 0 && row < _colIndices.length) {
+			//System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
+			if (_colIndices[row] == null) {
+			  _colIndices[row] = new VecInt(1);
+			  _values[row] = new VecInt(1);
+			}
+			// System.out.println("set(...) row: " + row + " col: " + col + " value: " + value);
+			int colIndex = -1;
+			// _colIndices[row].dump();
+			for (int i = 0; i < _colIndices[row].size() && colIndex < 0; i++) {
+			  // System.out.println("get(...) _colIndices[row].get(i): " + _colIndices[row].get(i));
+			  if (_colIndices[row].get(i) == col)
+				  colIndex = i;
+			}
+			if (colIndex >= 0 )
+				_values[row].set(colIndex,value);
+			else {
+				_colIndices[row].pushBack(col);
+				_values[row].pushBack(value);
+			}
+			if (_cols < col)
+			  _cols = col;
+			  
+	   }
 	}
 	  
 	  public int get(int row, int col) {

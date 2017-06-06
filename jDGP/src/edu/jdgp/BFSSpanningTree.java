@@ -6,7 +6,6 @@ import edu.jdgp.DGP.SparseMatrix;
 import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecFloat;
 import edu.jdgp.DGP.VecBool;
-import edu.jdgp.DGP.PartitionUnionFind;
 
 // 1) Construcción de la matriz M = [L,B;A,I] (ver apuntes Gabriel)
 // 2) Resolución del sistema lineal M [x;y] = v
@@ -20,7 +19,7 @@ public class BFSSpanningTree {
 	private VecInt _label2Vertex;
 	private VecInt _parent;
 	int _nV, _nE, _label, _root; 
-	int _maxHops; //estima la estrechez del árbol
+	int _treeLevels; //estima la estrechez del árbol
 
 	public BFSSpanningTree (Graph graph, int root) throws Exception {
 		_graph = graph;
@@ -56,7 +55,7 @@ public class BFSSpanningTree {
 					//System.out.println("ACA <2." + j + ">");
 					if (_spanningTree[parentLabel] == null) {
 						_spanningTree[parentLabel] = new VecInt(2);
-						_maxHops++;
+						_treeLevels++;
 					}
 					int childLabel = addVertex(neighbor);
 					_spanningTree[parentLabel].pushBack(childLabel);
@@ -88,9 +87,17 @@ public class BFSSpanningTree {
 		return _vertex2Label.get(iV);
 	}
 
+	public int getTreeLevels() {
+		return _treeLevels;
+	}
+
+	public VecInt getParents() {
+		return _parent; 
+	}
+
 	public void dump() {
 		if (_spanningTree != null) {
-			System.out.println("maxHops: " + _maxHops);
+			System.out.println("maxHops: " + _treeLevels);
 			for (int i = 0; i < _spanningTree.length; i++) {
 				if (_spanningTree[i] != null) {
 					VecInt row = _spanningTree[i];
