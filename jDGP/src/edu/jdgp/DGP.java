@@ -231,6 +231,16 @@ public class DGP extends DGP_h
 		}
 		return convertedVec;
 	}
+	
+	public VecInt add(VecInt v) throws Exception {
+		if (_size != v.size())
+			throw new Exception("Dimensions differ! this.size:" + _size + " v.size: " + v.size());
+		for (int i = 0; i < _size; i++) {
+			_vec[i] += v._vec[i];
+		}
+		return this;
+	}
+
   }
 
   public static class VecBool {
@@ -2199,6 +2209,15 @@ coordIndex [
 		  }
 		  return value;
 	  }
+
+	public void jacobiR() { //Jacobi A = D + R => x(k+1) = D^-1 (b - Rx(k))
+		  for (int i = 0; i < _rows; i++) {
+			  if (_colIndices[i] != null) {
+				  _values[i].invert();
+				  set(i, i, 0);
+			  }
+		  }
+	}
 
 	public void invertRow(int row) {
 		if (_values[row] != null) {
