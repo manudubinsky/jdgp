@@ -146,6 +146,7 @@ public class CustomSpanningTree {
 			}
 		}
 
+		/*
 		public void dump() {
 			int i = 1;
 			int j = 0;
@@ -157,6 +158,15 @@ public class CustomSpanningTree {
 				System.out.println();
 			}
 		}
+		*/
+		public void dump() {
+			//System.out.println("empty: " + empty());
+			for (int i = 0; i < binaryTree.size(); i++) {
+				System.out.print(binaryTree.get(i) + " ");
+			}
+			System.out.println();
+		}
+
 	}
 
 	public static interface IntComparator {
@@ -227,6 +237,7 @@ public class CustomSpanningTree {
 	}
 
 //1497 + 1000 = 2497
+	/*
 	public static void main(String[] args) throws Exception {
 		WeightedGraph g = new WeightedGraph(100);
 		// WeightedGraph g = new WeightedGraph(3);
@@ -244,7 +255,7 @@ public class CustomSpanningTree {
 		WeightedGraph tree = WeightedSpanningTreeBuilder.build(g, new MinComparator());
 		System.out.println("tree.getTotalWeight(): " + tree.getTotalWeight());
 	}
-
+*/
 /*
 	public static void main(String[] args) throws Exception {
 		WeightedGraph g = new WeightedGraph(5);	  
@@ -327,6 +338,18 @@ public class CustomSpanningTree {
 		g.dump();
 	}
 */
-	
+
+	public static void main(String[] args) {
+		int n = 10;
+		IntHeap heap = new IntHeap(new MinComparator());
+		for (int i = 0; i < n; i++) {
+			heap.insert(n-1-i);
+		}
+		for (int i = 0; i < n; i++) {
+			heap.dump();
+			heap.extract();
+		}
+
+	}
 }
 

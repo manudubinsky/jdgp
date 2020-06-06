@@ -3,6 +3,7 @@ package edu.jdgp;
 import edu.jdgp.DGP.Graph;
 import edu.jdgp.DGP.SpanningTree;
 import edu.jdgp.DGP.SparseMatrix;
+import edu.jdgp.DGP.SparseMatrixInt;
 import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecFloat;
 import edu.jdgp.DGP.PolygonMesh;
@@ -11,11 +12,11 @@ import edu.jdgp.DGP.PolygonMesh;
 // 2) Resolución del sistema lineal M [x;y] = v
 public class FormIntegrator {
 	private PolygonMesh _mesh;
-	private SparseMatrix _edgesMatrix;
+	private SparseMatrixInt _edgesMatrix;
 	
 	public FormIntegrator(PolygonMesh mesh) throws Exception {
 		_mesh = mesh;
-		buildMatrix();
+		buildMatrixLA();
 	}
 	
 	public void buildMatrixLA() throws Exception {
@@ -45,7 +46,7 @@ public class FormIntegrator {
 		
 	}
 
-	public SparseMatrix getEdgesMatrix() {
+	public SparseMatrixInt getEdgesMatrix() {
 		return _edgesMatrix;
 	}
 
@@ -61,7 +62,7 @@ public class FormIntegrator {
 		coordIndex.pushBackTriFace(3,1,0);
 		coordIndex.pushBackTriFace(2,1,3);
 		coordIndex.pushBackTriFace(2,3,0);
-
+/*
 		SparseMatrix edgesWeights = new SparseMatrix(4);
 		edgesWeights.set(0,1,1f);
 		edgesWeights.set(0,2,1f);
@@ -69,11 +70,20 @@ public class FormIntegrator {
 		edgesWeights.set(1,2,1f);
 		edgesWeights.set(1,3,1f);
 		edgesWeights.set(2,3,1f);
-		
+	*/	
 		try {
 			PolygonMesh pm = new PolygonMesh(coord, coordIndex);
 			FormIntegrator integrator = new FormIntegrator(pm);
-			integrator.getEdgesMatrix().fullDump();
+			SparseMatrixInt mat = integrator.getEdgesMatrix();
+			//mat.fullDump();
+			mat = mat.dropFirstColumn();
+			//mat.fullDump();
+			SparseMatrixInt[] LA = mat.splitByRow(3);
+			//LA[0].fullDump();
+			LA[0].transpose().fullDump();
+			//LA[0].fullDump();
+			LA[1].fullDump();
+			
 			//integrator.getEdgesMatrix().transpose().fullDump();
 		} catch (Exception e) {
 			e.printStackTrace();

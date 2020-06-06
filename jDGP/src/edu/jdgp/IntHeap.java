@@ -1,5 +1,7 @@
 package edu.jdgp;
 
+import edu.jdgp.PairHeap.MinComparator;
+
 public class IntHeap { 
 	private int[] binaryTree;
 	int indice;
@@ -25,6 +27,10 @@ public class IntHeap {
 			shiftDown(0);
 		}
 		return root;
+	}
+	
+	public boolean empty() {
+		return indice == 0;
 	}
 	
 	private void shiftUp(int childIndex) {
@@ -85,12 +91,14 @@ public class IntHeap {
 	}
 
 	public void dump() {
+		System.out.println("empty: " + empty());
 		for (int i = 0; i < indice; i++) {
 			System.out.print(binaryTree[i] + " ");
 		}
 		System.out.println();
 	}
-	
+
+	/*
 	public static void main(String[] args) {
 		IntHeap h = new IntHeap(6);
 		h.insert(1);
@@ -113,6 +121,30 @@ public class IntHeap {
 		h.dump();
 		h.extract();
 		h.dump();
-	}
 
+		h.insert(5);
+		h.insert(7);
+		h.insert(3);
+
+		h.dump();
+		h.extract();
+		h.dump();
+		h.extract();
+		h.dump();
+		h.extract();
+
+	}
+*/
+	public static void main(String[] args) {
+		int n = 10;
+		IntHeap heap = new IntHeap(n);
+		for (int i = 0; i < n; i++) {
+			heap.insert(n-1-i);
+		}
+		for (int i = 0; i < n; i++) {
+			heap.dump();
+			heap.extract();
+		}
+
+	}
 }

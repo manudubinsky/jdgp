@@ -32,7 +32,7 @@ public class SimpleFormIntegrator {
 		VecInt[] tree = new VecInt[_nV];
 		PartitionUnionFind unionFind = new PartitionUnionFind(_nV);
 		for (int i = 0; i < _nE && unionFind.getNumberOfParts() > 1; i++) {			
-			if (unionFind.hasToJoin(_edges[i][0], _edges[i][1])) { // particiones distintas => agregar el eje al arbol generador
+			if (unionFind.checkHasToJoin(_edges[i][0], _edges[i][1])) { // particiones distintas => agregar el eje al arbol generador
 				int iV0 = _edges[i][0];
 				int iV1 = _edges[i][1];
 				if (tree[iV0] == null) tree[iV0] = new VecInt(2);

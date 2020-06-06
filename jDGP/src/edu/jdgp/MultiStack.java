@@ -1,5 +1,4 @@
 package edu.jdgp;
-package edu.jdgp;
 
 import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecBool;
@@ -19,7 +18,7 @@ import edu.jdgp.DGP.VecBool;
  * Referencia:
  * 		"SpanningTreesMatsui.pdf"
  * */
-public class MultiVecInt {
+public class MultiStack {
 	int _numVecsPerSlot;
 	int _nextSlot;
 	private VecInt[] _vecs;
@@ -30,7 +29,7 @@ public class MultiVecInt {
 	 *                  que pueden sustituirse por cada eje pivot)
 	 * int initalNumSlots: cantidad inicial de slots
 	 */ 
-	public MultiVecInt(int numVecsPerSlot, int initalNumSlots) {
+	public MultiStack(int numVecsPerSlot, int initalNumSlots) {
 		_nextSlot = 0;
 		_numVecsPerSlot = numVecsPerSlot;
 		_vecs = new VecInt[numVecsPerSlot * initalNumSlots];

@@ -1,8 +1,12 @@
 package edu.jdgp;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 import edu.jdgp.DGP.Graph;
-import edu.jdgp.DGP.VecInt;
 import edu.jdgp.DGP.VecBool;
+import edu.jdgp.DGP.VecInt;
 
 /*
  * Implementacion de Graph específico para Tarjan-Rad
@@ -131,8 +135,29 @@ public class GraphTarjanRead extends Graph {
 		return g;
 	}
 
+	public static GraphTarjanRead buildFromAdjMatrix(int n, String fileName) {
+		GraphTarjanRead g = new GraphTarjanRead(n);
+	    File file = new File(fileName);
+	    try {
+	    	//System.out.println(file);
+	        Scanner sc = new Scanner(file);
+	        int j = 0;
+	        while (sc.hasNextInt()) {
+	            if (sc.nextInt() == 1) 	            
+	            	g.insertEdge(j/n, j%n);
+	            j++;
+	        }
+	        sc.close();
+	    } 
+	    catch (FileNotFoundException e) {
+	        e.printStackTrace();
+	    }
+	    //g.dump();
+	    return g;
+	}
+	
 	public static void main(String[] args) throws Exception {
-		GraphTarjanRead g1 = new GraphTarjanRead(4);
+/*		GraphTarjanRead g1 = new GraphTarjanRead(4);
 		g1.insertEdge(0, 1);
 		g1.insertEdge(0, 2);
 		g1.insertEdge(1, 2);
@@ -142,11 +167,8 @@ public class GraphTarjanRead extends Graph {
 		//g2.enableEdge(1);
 		g2.dump();
 		System.out.println("g2.edgeInduceCycle(2): " + g2.edgeInduceCycle(2));
-/*		g.insertEdge(0, 3);
-		g.insertEdge(1, 3);
-		g.insertEdge(2, 3);
 */
-		
+		buildFromAdjMatrix(5, "/home/manuel/20170817/doctorado/octave/tesis-octave/ejemplos/connected-graphs/deg-5/A12.mat");
 	}
 
 }

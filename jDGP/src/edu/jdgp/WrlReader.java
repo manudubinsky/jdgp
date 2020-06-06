@@ -63,9 +63,17 @@ public class WrlReader {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		WrlReader reader = new WrlReader("/home/manuel/doctorado/jdgp/jDGP/img/bunny1r.wrl");
-		Graph g = reader.getMesh().getGraph();
+		WrlReader reader = new WrlReader("/home/manuel/workspace/jdgp/img/ateneav.wrl");
+		PolygonMesh mesh = reader.getMesh();
+		Graph g = mesh.getGraph();
 		System.out.println(" nV: " + g.getNumberOfVertices() + 
 		                   " nE: " + g.getNumberOfEdges());
+		int nF = mesh.getNumberOfFaces();
+		//System.out.println(nF);
+		for (int i = 1; i < nF; i++) { 
+			if (mesh.getFaceSize(i) != 3) {
+				System.out.println(mesh.getFaceSize(i));
+			}
+		}
 	}
 }

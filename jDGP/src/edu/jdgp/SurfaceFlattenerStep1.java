@@ -6,7 +6,7 @@ import edu.jdgp.DGP.VecFloat;
 import edu.jdgp.DGP.VecInt;
 
 // Calcula un conjunto de vectores normales a las caras tales que los angulos entre
-// las normales de caras adyacentes sean más cercanos a 0 
+// las normales de caras adyacentes sean mï¿½s cercanos a 0 
 public class SurfaceFlattenerStep1 {
 	private PolygonMesh _mesh;
 	private VecFloat _translatedEdges;

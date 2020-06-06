@@ -7,7 +7,7 @@ package edu.jdgp;
 
 import  java.util.*;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
+//import com.sun.org.apache.xpath.internal.operations.Bool;
 
 public class DGP extends DGP_h
 {
@@ -38,6 +38,14 @@ public class DGP extends DGP_h
 		init(initValue);
 	}
 
+	public static VecInt buildIncreasing(int N) {
+		VecInt v = new VecInt(N, 0);
+		for(int i = 0; i < N; i++) {
+			v.set(i,i);
+		}
+		return v;
+	}
+	
 	public void _reset() {
 		_vec = new int[_vecLen];
 		_size = 0;
@@ -49,6 +57,10 @@ public class DGP extends DGP_h
 
 	public int size() {
 		return _size;
+	}
+
+	public int vecLen() {
+		return _vecLen;
 	}
 
 	public void pushBack(int v) {
@@ -132,6 +144,11 @@ public class DGP extends DGP_h
 		_vec[j]++;
 	}
 
+	public void dec(int j) throws ArrayIndexOutOfBoundsException {
+		if (j < 0 || j >= _size)
+			throw new ArrayIndexOutOfBoundsException();
+		_vec[j]--;
+	}
 
 	public void swap(int i, int j) throws ArrayIndexOutOfBoundsException {
 		if (i < 0 || i >= _size || j < 0 || j >= _size)
@@ -241,8 +258,67 @@ public class DGP extends DGP_h
 		return this;
 	}
 
+	public String join(String sep) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < _size; i++) {
+			sb.append((sb.length() > 0 ? sep : "") + _vec[i]);
+		}
+		return sb.toString();
+	}
+
   }
 
+  public static class VecObject 
+  {
+	private int _vecLen;
+	private int _size;
+	private Object[] _vec;
+
+	public VecObject() {
+		_vecLen = 1024;
+		_reset();
+	}
+
+	public VecObject(int N) {
+		_vecLen = N;
+		_reset();
+	}
+
+	public void _reset() {
+		_vec = new Object[_vecLen];
+		_size = 0;
+	}
+	
+	public int size() {
+		return _size;
+	}
+
+	public int vecLen() {
+		return _vecLen;
+	}
+
+	public void pushBack(Object v) {
+		if (_size == _vecLen)
+			_resize();
+		_vec[_size++] = v;
+	}
+	private void _resize() {
+		// System.out.println("_resize: _vecLen: " + _vecLen);
+		Object[] newVec = new Object[_vecLen*2];
+		for (int i = 0; i < _vecLen; i++) {
+			newVec[i] = _vec[i];
+		}
+		_vec = newVec;
+		_vecLen *= 2;
+	}
+	public Object get(int j) throws ArrayIndexOutOfBoundsException {
+		if (j < 0 || j >= _size)
+				throw new ArrayIndexOutOfBoundsException();
+		return _vec[j];
+	}
+  }
+  
+  
   public static class VecBool {
 	private int _vecLen;
 	private int _size;
@@ -374,7 +450,14 @@ public class DGP extends DGP_h
 	System.out.println("v[0]: " + v.get(0) + " v[1024]: " + v.get(1024) + " v[2048]: " + v.get(2048) + " v[4096]: " + v.get(4096));
   }
 */
-  
+
+  public static void main(String[] args) {
+
+	  Graph g = Graph.buildReduction(2);
+	  System.out.println("nV: " + g.getNumberOfVertices() + " nE: " + g.getNumberOfEdges());
+	  g.dump();
+  }
+
   //////////////////////////////////////////////////////////////////////
   public static class VecFloat  implements VecFloat_h
   {
@@ -818,6 +901,10 @@ public class DGP extends DGP_h
 		return _numParts;
 	}
 
+	public int[] getElems() {
+		return _elems;
+	}
+	
 	public int find(int i) {
 		if (i >= 0 && i < _numElems)
 			if (_elems[_elems[i]] == _elems[i]) { // si tiene bien seteado el representante de la particion (ie.: la raiz del arbol)
@@ -900,7 +987,7 @@ public class DGP extends DGP_h
   }
 */  
   public static class SpanningTree {
-	  private SparseMatrix _spannigTree;
+	  private SparseMatrixInt _spannigTree;
 	  private VecInt _vertex2Label;
 	  private VecInt _label2Vertex;
 	  int _nV, _nE, _label;
@@ -913,7 +1000,7 @@ public class DGP extends DGP_h
 		  _vertex2Label = new VecInt(_nV,-1);
 		  _label2Vertex = new VecInt(_nV,-1);
 		  _treeEdges = new VecInt(_nV-1);
-		  _spannigTree = new SparseMatrix(_nV-1);		  
+		  _spannigTree = new SparseMatrixInt(_nV-1);		  
 		  build(graph);
 	  }
 	  
@@ -965,7 +1052,7 @@ public class DGP extends DGP_h
 		  //System.out.println(_spannigTree.getRows() + " " + _spannigTree.getCols());
 	  }
 	  
-	  public SparseMatrix getTree () {
+	  public SparseMatrixInt getTree () {
 		  return _spannigTree;
 	  }
 	  
@@ -1212,7 +1299,6 @@ public class DGP extends DGP_h
 	  protected int _nV;
 	  protected int _nE;
 	  
-	  
 	  public Graph() {
 		  _nV = 0;
 	  }
@@ -1221,7 +1307,19 @@ public class DGP extends DGP_h
 		  _nV = N;
 		  erase();
 	  }
-	  
+
+		public Graph clone() {
+			Graph copy = new Graph(_nV);
+			copy._nE = _nE;
+			copy._edges = _edges.clone();
+			copy._vertexEdges = new VecInt[_vertexEdges.length];
+			for (int i = 0; i < _vertexEdges.length; i++) {
+				if (_vertexEdges[i] != null) 
+					copy._vertexEdges[i] = _vertexEdges[i].clone();
+			}
+			return copy;
+		}
+
 	public void erase() {
 		_edges = new VecInt(_nV); // estimativamente lo creo del tamano de la cantidad de nodos 
 		_vertexEdges = new VecInt[_nV];
@@ -1266,6 +1364,15 @@ public class DGP extends DGP_h
 		return index;
 	}
 
+	public int insertVertex() {
+		VecInt[] aux = new VecInt[_nV+1];
+		for (int i = 0; i < _nV; i++) {
+			aux[i] = _vertexEdges[i];
+		}
+		_vertexEdges = aux;
+		return _nV++;
+	}
+	
 	public int insertEdge(int iV0, int iV1) {
 		// System.out.println("insertEdge() iV0: " + iV0 + " iV1: " + iV1);
 		if (iV0 > iV1) {
@@ -1409,9 +1516,10 @@ public class DGP extends DGP_h
 		int size = _edges.size();
 		int i = 0;
 		while (i < size) {
+			int iE = i / 2;
 			int iV0 = _edges.get(i++);
 			int iV1 = _edges.get(i++);
-			System.out.println(iV0 + " -> " + iV1);
+			System.out.println(iE + ": " + iV0 + " -> " + iV1);
 		}
 	}
 	
@@ -1424,7 +1532,25 @@ public class DGP extends DGP_h
 		}
 		return g;
 	}
-	
+
+	public static Graph buildCompleteGraphExceptEdges(int n, int[] except) {
+		Graph g = new Graph(n);
+		for (int i = 0; i < n-1; i++) {
+			for (int j = i+1; j < n; j++) {
+				boolean found = false;
+				int k = 0; 
+				while (k < except.length && !found) {
+					if (except[k] == i && except[k+1] == j)
+						found = true;
+					k+=2;
+				}
+				if (!found)
+					g.insertEdge(i, j);
+			}
+		}
+		return g;
+	}
+
 	public static Graph buildCycleGraph(int n) {
 		Graph g = new Graph(n);
 		for (int i = 0; i < n; i++) {
@@ -1443,6 +1569,46 @@ public class DGP extends DGP_h
 		return g;
 	}
 
+	/*
+	 * MSTCI <- 3DM reduction
+	 * 
+	 * Generar instancias para verificar si la reduccion de 3DM a MSTCI funciona
+	 *  
+	 */
+	public static Graph buildReduction(int q) {
+		int idx = 0;
+		int[][] nodes = new int[9][q];
+		for (int i = 0; i < 9; i++) {
+			for (int j = 0; j < q; j++) {
+				nodes[i][j] = idx++;
+			}
+		}
+		int root = idx++;
+		Graph g = new Graph(idx);
+
+		for (int i = 0; i < 3; i++) { //3 conjuntos de ternas
+			int base = 3*i;
+			for (int j = 0; j < q; j++) {
+				g.insertEdge(nodes[base][j], nodes[base+1][j]);
+				g.insertEdge(nodes[base][j], nodes[base+2][j]);
+			}
+		}
+		
+		for (int i = 0; i < q; i++) { //bipartitos completos
+			for (int j = 0; j < q; j++) {
+				g.insertEdge(nodes[2][i], nodes[4][j]);
+				g.insertEdge(nodes[5][i], nodes[7][j]);
+				g.insertEdge(nodes[8][i], nodes[1][j]);
+			}
+		}
+		
+		for (int i = 0; i < q; i++) {
+			g.insertEdge(root, nodes[0][i]);
+		}
+		
+		return g;
+	}
+
   }
 
 	//grafo que permite renombrar los ejes. esto sirve específicamente
@@ -1452,16 +1618,38 @@ public class DGP extends DGP_h
 		private Graph _graph;
 		private VecInt _edgeLabels; //relabel de los ejes (e1,...,eN-1,...,eM); ejes [0..N-2] son los del árbol generador
 		private VecInt _reverseLabels; //indice invertido de _edgeLabels
+		private int _maxRelabel;
 		
 		public EdgeRelabelGraph(Graph g) {
-			_graph = g;
-			_edgeLabels = new VecInt(_graph.getNumberOfEdges(), -1);
-			_reverseLabels = new VecInt(_graph.getNumberOfEdges(), -1);
-			relabelEdges();
+			this(g, g.getNumberOfEdges());
 		}
+		
+		public EdgeRelabelGraph(Graph g, int size) {
+			_graph = g;
+			_edgeLabels = new VecInt(size, -1);
+			_reverseLabels = new VecInt(size, -1);
+			relabelEdges();
+/*			System.out.println("ANTES *****************");
+			_edgeLabels.dump();
+			_reverseLabels.dump();
+			System.out.println("DESPUES *****************");
+*/		}
 
+		public void setMapping(VecInt edgeLabels, VecInt reverseLabels) {
+			_edgeLabels = edgeLabels;
+			_reverseLabels = reverseLabels;
+		}
+		
+		public void addExtraEdge(int graphIdx) {
+			setEdgeLabels(graphIdx, ++_maxRelabel);
+		}
+		
 		private void setEdgeLabels(int graphIdx, int relabelIdx) {
+			if (relabelIdx > _maxRelabel) {
+				_maxRelabel = relabelIdx;
+			}
 			_edgeLabels.set(relabelIdx, graphIdx);
+			//System.out.println("graphIdx: " + graphIdx + " relabelIdx: " + relabelIdx);
 			_reverseLabels.set(graphIdx, relabelIdx);
 		}
 		
@@ -1477,7 +1665,7 @@ public class DGP extends DGP_h
 			return _graph;
 		}
 		//spanning tree inicial: BFS a partir del nodo 0 (podría ser de otro modo)
-		private void relabelEdges() {
+		protected void relabelEdges() {
 			VecBool visitedEdges = new VecBool(_graph.getNumberOfEdges(), false);
 			int treeEdgeIdx = 0; //indice de ejes del árbol generador
 			int loopEdgeIdx = _graph.getNumberOfVertices() - 1; //indice de ejes loop
@@ -1495,11 +1683,14 @@ public class DGP extends DGP_h
 						if (!visitedEdges.get(iE)) {
 							visitedEdges.set(iE,true);
 							int neighbor = _graph.getNeighbor(iV, iE);
-							if (!visitedNodes.get(neighbor)) {
+							//System.out.print(iV + " -> " + neighbor + " (" + iE + ") ");
+							if (!visitedNodes.get(neighbor) && !queue.contains(neighbor)) {
 							// si el vecino no fue visitado lo agrego a la queue y agrego el eje a los del árbol
+								//System.out.println(" SI!");
 								queue.pushBack(neighbor);
 								setEdgeLabels(iE, treeEdgeIdx++);
 							} else {
+								//System.out.println(" NO!");
 							// si el nodo ya fue visitado agrego el eje a los ejes loop
 								setEdgeLabels(iE, loopEdgeIdx++);
 							}
@@ -1695,6 +1886,10 @@ coordIndex [
 		// _edgeFaces se base en que _graph.insertEdge(iV0, iV1) inserta de forma correlativa (ie.: primero el 1, despues el 2, etc.) 
 		int iV0 = _coordIndex.get(iC0);
 		int iV1 = _coordIndex.get(iC1);
+		//System.out.println("iV1: " + iV1 + " iC1: " + iC1);
+//		if ((iV0 == 101 && iV1 == 102) || (iV0 == 102 && iV1 == 101)) {
+//			System.out.println("ACAAAAA " + iV0 + " " + iV1);
+//		}
 		int edge = _graph.insertEdge(iV0, iV1);
 		// System.out.println("_insertEdge() iF: " + iF + " iV0: " + iV0 + " iV1:" + iV1 + " edge: " + edge);
 		if (edge == -1) {
@@ -1716,6 +1911,10 @@ coordIndex [
 		return getVertexCoord(iV, j);
 	}
 
+	public int getVertex(int iC) {
+		return _coordIndex.get(iC);
+	}
+	
 	public int getEdge(int iC) {		
 		try {
 			int iV0 = _coordIndex.get(iC);
@@ -1880,6 +2079,10 @@ coordIndex [
 
 	public boolean isSingularEdge(int iE) throws Exception {
 		return _edgeFaces.get(iE).size() > 2;
+	}
+	
+	public VecInt getEdgeFaces(int iE) {
+		return _edgeFaces.get(iE);
 	}
 	
 	public VecInt getFaceEdges(int iF) throws Exception {
@@ -2243,7 +2446,25 @@ coordIndex [
 			}
 		}
 	}
-		  
+	
+	public SparseMatrixInt multiply(SparseMatrixInt B) {
+		SparseMatrixInt C = new SparseMatrixInt(_rows);
+		for (int i = 0; i < _rows; i++) {
+			VecInt rowA = _colIndices[i];
+			//rowA.dump();
+			for (int j = 0; j < B.getCols(); j++) {
+				int suma = 0;
+				for (int k = 0; k < rowA.size(); k++) {
+					//System.out.println("ACA! rowA.get(k): " + rowA.get(k) + " B.get(k, j): " + B.get(k, j));
+					int col = rowA.get(k);
+					suma += get(i,col) * B.get(col, j);
+				}
+				C.set(i, j, suma);
+			}
+		}
+		return C;
+	}
+	
 	  public void add(int row, int col, int value) {
 		  if (value != 0) {
 			  if (_colIndices[row] != null) {			  
@@ -2329,25 +2550,105 @@ coordIndex [
 		  _rows = rows;
 	  }
 	  
+	  //divide un matriz, devuelve dos matrices: [filas 0 <= i < row, row <= i < N]
+	  public SparseMatrixInt[] splitByRow(int row) {
+		  SparseMatrixInt[] matrices = new SparseMatrixInt[2];
+		  if (row < _rows) {			  
+			  matrices[0] = new SparseMatrixInt(row);
+			  matrices[0]._cols = _cols;
+			  for (int i = 0; i < row; i++) {
+				  matrices[0]._colIndices[i] = _colIndices[i];
+				  matrices[0]._values[i] = _values[i];
+			  } 	
+			  matrices[1] = new SparseMatrixInt(_rows - row);
+			  matrices[1]._cols = _cols;
+			  for (int i = row; i < _rows; i++) {
+				  matrices[1]._colIndices[i - row] = _colIndices[i];
+				  matrices[1]._values[i - row] = _values[i];
+			  } 				  
+		  }
+		
+		  return matrices;
+	  }
+
+	  public SparseMatrixInt dropFirstColumn() {
+		  SparseMatrixInt m = new SparseMatrixInt(_rows);
+		  m._cols = _cols - 1;
+		  for (int i = 0; i < _rows; i++) {
+			  int cols = _colIndices[i].size();			  		
+			  m._colIndices[i] = new VecInt(cols-1);
+			  m._values[i] = new VecInt(cols-1);
+			  for (int j = 0; j < _colIndices[i].size(); j++) {
+				  if (_colIndices[i].get(j) != 0) {
+					  m._colIndices[i].pushBack(_colIndices[i].get(j)-1);
+					  m._values[i].pushBack(_values[i].get(j));
+				  }
+			}
+			  
+		  } 			  
+		  return m;
+	  }
+	  
 	  public void fullDump() {
 		  for (int i = 0; i < _rows; i++) {
-			  int currentCol = 0;
 			  StringBuffer row = new StringBuffer();
-			  if (_colIndices[i] != null) {
-				  for (int j = 0; j < _colIndices[i].size(); j++) {
-					  while (currentCol++ < _colIndices[i].get(j)) {
-						  row.append("\t0");						  
-					  }
-					  row.append("\t" + _values[i].get(j));
-				  } 
-			  }
-			  for (int j = currentCol -1; j < _cols; j++) {
-				  row.append("\t0");
+			  for (int j = 0; j < getCols(); j++) {
+				  row.append(String.format("%1$5d", get(i,j)));
 			  }
 			  System.out.println(row);
 		  }
+		  //String sep = "\t";
+		  //String sep = "   ";
+//		  for (int i = 0; i < _rows; i++) {
+//			  int currentCol = 0;
+//			  StringBuffer row = new StringBuffer();
+//			  if (_colIndices[i] != null) {
+//				  _colIndices[i].dump();
+//				  _values[i].dump();
+//				  for (int j = 0; j < _colIndices[i].size(); j++) {
+//					  while (currentCol++ < _colIndices[i].get(j)) {
+//						  row.append(String.format("%1$5d", 0));						  
+//					  }
+//					  row.append(String.format("%1$5d", _values[i].get(j)));
+//				  } 
+//			  }
+//			  for (int j = currentCol -1; j < _cols; j++) {
+//				  row.append(String.format("%1$5d", 0));
+//			  }
+//			  System.out.println(row);
+//		  }
 	  }
 	  
+	  private String rowToString(int row) {
+		  StringBuffer rowStr = new StringBuffer();
+		  int currentCol = 0;			  
+		  if (_colIndices[row] != null) {
+			  for (int j = 0; j < _colIndices[row].size(); j++) {
+				  while (currentCol++ < _colIndices[row].get(j)) {					  
+					  rowStr.append((rowStr.length() > 0 ? "," : "") + 
+							  				String.format("%1$5d", 0));
+				  }
+				  rowStr.append((rowStr.length() > 0 ? "," : "") + 
+						  			String.format("%1$5d", _values[row].get(j)));
+			  } 
+		  }
+		  for (int j = currentCol-1; j < _cols; j++) {
+			  rowStr.append((rowStr.length() > 0 ? "," : "") +
+					  			String.format("%1$5d", 0));
+		  }
+		  return rowStr.toString();
+	  }
+	  
+	  public void toOctave() {
+		  StringBuffer matStr = new StringBuffer();
+		  for (int i = 0; i < _rows; i++) {
+			  matStr.append((matStr.length() > 0 ? ";" : "") + 
+					  			rowToString(i));
+			  matStr.append("\n");
+		  }
+		  System.out.println("[" + matStr + "]");
+	  }
+
 	  public void dump() {
 		  for (int i = 0; i < _rows; i++) {
 			  if (_colIndices[i] != null) {

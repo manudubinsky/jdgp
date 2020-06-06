@@ -10,7 +10,7 @@ import edu.jdgp.DGP.PartitionUnionFind;
  * Para encararlo se puede leer el paper "UnionFindDinamico.pdf" ahí hay
  * referencias.
  */ 
-public class SpanningTreesTarjanRead {
+public class PartitionUnionFindReversible {
 
 	public static class IntSparseMatrix	{
 		int _rows;
@@ -145,12 +145,12 @@ public class SpanningTreesTarjanRead {
 	* para cada eje del grafo hay que probar a agregarlo y no 
 	* agregarlo al PST (partial spanning tree)
 	*/
-	public static class PartitionUnionFindReversible {
+	public static class PartitionUnionFindReversibleInner {
 		private IntSparseMatrix _elems; //matriz de elementos en funcion de la iteracion
 		private int _currentCol; // columna (iteracion) actual de _elems
 		private int _numElems; // cantidad de elementos
 		
-		public PartitionUnionFindReversible(int n) {
+		public PartitionUnionFindReversibleInner(int n) {
 			reset(n);
 		}
 	  

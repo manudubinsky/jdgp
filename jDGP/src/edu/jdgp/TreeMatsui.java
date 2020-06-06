@@ -1,10 +1,15 @@
 package edu.jdgp;
 
-import edu.jdgp.DGP.Graph;
-import edu.jdgp.DGP.VecInt;
-import edu.jdgp.DGP.VecBool;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+
 import edu.jdgp.DGP.EdgeRelabelGraph;
+import edu.jdgp.DGP.Graph;
 import edu.jdgp.DGP.PartitionUnionFind;
+import edu.jdgp.DGP.SparseMatrixInt;
+import edu.jdgp.DGP.VecBool;
+import edu.jdgp.DGP.VecInt;
 
 /*
  * Implementacion de Tree específico para Matsui
@@ -67,6 +72,10 @@ public class TreeMatsui {
 	
 	public VecInt getTreeEdges() {
 		return _treeEdges;
+	}
+
+	public void setTreeEdges(VecInt treeEdges) {
+		_treeEdges = treeEdges;
 	}
 
 	public int getTop() {
@@ -136,7 +145,297 @@ public class TreeMatsui {
 		_treeEdges.dump();
 		_availableEdges.dump();
 	}
+	
+	public void dumpGraphViz(String fileName) {
+		boolean[] redEdges = new boolean[_graph.getNumberOfEdges()];
+		for (int i = 0; i < _treeEdges.size(); i++) {
+			redEdges[_relabelGraph.getGraphIdx(_treeEdges.get(i))] = true;
+		}
+		VecInt edges = _graph.getEdges();
+		BufferedWriter writer = null;
+        try {
+            //create a temporary file
+            //String timeLog = new SimpleDateFormat("yyyyMMdd_HHmmssSS").format(Calendar.getInstance().getTime());
+            File logFile = new File(fileName + ".tree");
 
+            // This will output the full path where the file will be written to...
+            //System.out.println(logFile.getCanonicalPath());
+
+            writer = new BufferedWriter(new FileWriter(logFile));
+            writer.write("graph {\n");
+            for (int i = 0; i < edges.size(); i+=2) {
+            	if (redEdges[i/2]) {
+            		writer.write("  " + edges.get(i) + " -- " + edges.get(i+1) + " [color=red]\n");		
+            	} else {
+            		writer.write("  " + edges.get(i) + " -- " + edges.get(i+1) + " [color=blue]\n");
+            	}
+            }            
+            writer.write("}\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                // Close the writer regardless of what happens...
+                writer.close();
+            } catch (Exception e) {
+            }
+        }
+	}
+
+	public SparseMatrixInt labiMatrix() {
+		BFSTreeRelabel bfs = new BFSTreeRelabel(_graph, _treeEdges, _relabelGraph);
+		SparseMatrixInt labi = new SparseMatrixInt(_graph.getNumberOfEdges());
+		boolean[] treeEdges = new boolean[_graph.getNumberOfEdges()];
+		int edgeIdx = 0;
+		for (int i = 0; i < bfs._treeEdges.size(); i++) {
+			int iE = bfs._treeEdges.get(i);
+			treeEdges[iE] = true;
+			int iV0 = bfs._vertex2Label.get(_graph.getVertex0(iE));
+			int iV1 = bfs._vertex2Label.get(_graph.getVertex1(iE));
+			if (iV0 > iV1) {
+				int aux = iV0;
+				iV0 = iV1;
+				iV1 = aux;
+			}
+			//matriz L
+			labi.set(edgeIdx, iV0, -1);
+			labi.set(edgeIdx, iV1, 1);
+			edgeIdx++;
+		}
+		for (int i = 0; i < treeEdges.length; i++) {
+			if (!treeEdges[i]) { // si es un loop-edge
+				int iV0 = bfs._vertex2Label.get(_graph.getVertex0(i));
+				int iV1 = bfs._vertex2Label.get(_graph.getVertex1(i));
+				if (iV0 > iV1) {
+					int aux = iV0;
+					iV0 = iV1;
+					iV1 = aux;
+				}
+				//matriz A
+				labi.set(edgeIdx, iV0, -1);
+				labi.set(edgeIdx, iV1, 1);
+				//matriz I
+				labi.set(edgeIdx, edgeIdx+1, 1);
+				//matriz B
+				while (iV0 != iV1) {
+					if (iV0 < iV1) {
+						labi.set(iV1-1, edgeIdx+1, -1);
+						iV1 = bfs._parent.get(iV1);						
+					} else {
+						labi.set(iV0-1, edgeIdx+1, 1);
+						iV0 = bfs._parent.get(iV0);												
+					}
+				}
+				edgeIdx++;
+			}
+		}
+		//labi.fullDump();
+		//System.out.println("******************");
+		return labi;
+	}
+	
+	public SparseMatrixInt vertexDistances() {
+		BFSTreeRelabel bfs = new BFSTreeRelabel(_graph, _treeEdges, _relabelGraph);
+		SparseMatrixInt _vertexDistances = new SparseMatrixInt(_graph.getNumberOfVertices());
+		for (int i = 0; i < _graph.getNumberOfVertices(); i++) {
+			int iV0 = bfs._label2Vertex.get(i);
+			VecInt neighbors = bfs._vertexNeighbors[iV0];
+			for (int j = 0; j < neighbors.size(); j++) {
+				int iV1 = neighbors.get(j);
+				if (_vertexDistances.get(iV0, iV1) == 0) { //si es la primera vez (notar que hay dos veces por cada eje)
+					for (int k = 0; k < _graph.getNumberOfVertices(); k++) {
+						if (_vertexDistances.get(iV0, k) != 0) {
+							_vertexDistances.set(k, iV1, _vertexDistances.get(iV0, k) + 1);
+							_vertexDistances.set(iV1, k, _vertexDistances.get(iV0, k) + 1);
+						}
+					}
+					_vertexDistances.set(iV0, iV1, 1);
+					_vertexDistances.set(iV1, iV0, 1);
+				}
+			}
+		}		
+		return _vertexDistances;
+	}
+	
+	public int labiCantZeros() {
+		SparseMatrixInt labi = labiMatrix();
+		int cantZeros = 0;
+		SparseMatrixInt laplacian = labi.transpose().multiply(labi);
+		//laplacian.toOctave();
+		for (int i = _graph.getNumberOfVertices(); i < _graph.getNumberOfEdges()+1; i++) {
+			for (int j = _graph.getNumberOfVertices(); j < _graph.getNumberOfEdges()+1; j++) {
+				if (laplacian.get(i,j) == 0)
+					cantZeros++;
+			}	
+		}
+		return cantZeros;
+	}
+	
+	public int diameter() {
+		SparseMatrixInt dist = vertexDistances();
+		int diameter = 0;
+		for (int i = 0; i < _graph.getNumberOfVertices(); i++) {
+			for (int j = i+1; j < _graph.getNumberOfVertices(); j++) {
+				if (dist.get(i, j) > diameter)
+					diameter = dist.get(i, j);
+			}
+		}
+		return diameter;
+	}
+
+	public int totalPathLength() {
+		SparseMatrixInt dist = vertexDistances();
+		int totalLen = 0;
+		for (int i = 0; i < _graph.getNumberOfVertices(); i++) {
+			for (int j = i+1; j < _graph.getNumberOfVertices(); j++) {
+				totalLen += dist.get(i, j);
+			}	
+		}
+		return totalLen;
+	}
+
+	//genera una histograma del largo de los ciclos que inducen los loop-edges en el árbol
+	public int[] cycleHistogram() {
+		int[] _histogram = new int[_graph.getNumberOfEdges()+1];
+		SparseMatrixInt dist = vertexDistances();
+		for (int i = 0; i < _availableEdges.size(); i++) {
+			if (!_availableEdges.get(i)) { // los loop edges son los que están en false
+				int iV0 = _graph.getVertex0(i);
+				int iV1 = _graph.getVertex1(i);
+				_histogram[dist.get(iV0, iV1)+1]++; //el "+1" es porque el ciclo mide 1 mas que el camino
+			}
+		}
+		return _histogram;
+	}
+	
+	public int cycleHistogramDigest() {
+		int digest = 0;
+		int[] _histogram = cycleHistogram();
+		for (int i = 0; i < _histogram.length; i++) {
+			digest += i * _histogram[i];
+		}
+		return digest;
+	}
+
+	public boolean isStar() {
+		boolean match = false;
+		VecInt[] _vertexNeighbors;
+		_vertexNeighbors = new VecInt[_graph.getNumberOfVertices()];
+		for (int i = 0; i < _treeEdges.size(); i++) {
+			int iE = _relabelGraph.getGraphIdx(_treeEdges.get(i));
+			int iV0 = _graph.getVertex0(iE);
+			int iV1 = _graph.getVertex1(iE);
+			if (_vertexNeighbors[iV0] == null) {
+				_vertexNeighbors[iV0] = new VecInt(2);
+			}
+			if (_vertexNeighbors[iV1] == null) {
+				_vertexNeighbors[iV1] = new VecInt(2);
+			}
+			_vertexNeighbors[iV0].pushBack(iV1);
+			_vertexNeighbors[iV1].pushBack(iV0);
+		}
+		for(int i = 0; i < _vertexNeighbors.length && !match; i++) {
+			if (_vertexNeighbors[i].size() == (_graph.getNumberOfVertices() - 1))
+				match = true;
+		}
+		return match;
+	}
+	
+	public static class BFSTreeRelabel {
+		private Graph _graph;
+		private VecInt[] _vertexNeighbors;
+		public VecInt _treeEdges;
+		public VecInt _vertex2Label;
+		public VecInt _label2Vertex;
+		public VecInt _parent;
+
+		BFSTreeRelabel(Graph graph, VecInt treeEdges, EdgeRelabelGraph _relaRelabelGraph) {
+			_graph = graph;
+			_vertexNeighbors = new VecInt[_graph.getNumberOfVertices()];
+			for (int i = 0; i < treeEdges.size(); i++) {
+				int iE = _relaRelabelGraph.getGraphIdx(treeEdges.get(i));
+				int iV0 = _graph.getVertex0(iE);
+				int iV1 = _graph.getVertex1(iE);
+				if (_vertexNeighbors[iV0] == null) {
+					_vertexNeighbors[iV0] = new VecInt(2);
+				}
+				if (_vertexNeighbors[iV1] == null) {
+					_vertexNeighbors[iV1] = new VecInt(2);
+				}
+				_vertexNeighbors[iV0].pushBack(iV1);
+				_vertexNeighbors[iV1].pushBack(iV0);
+			}
+/*			for (int i = 0; i < _graph.getNumberOfVertices(); i++) {
+				System.out.print("i: " + i + " ");
+				_vertexEdges[i].dump();
+			}
+			System.out.println("**********************");
+*/			build();
+			//_label2Vertex.dump();
+		}
+		
+		private void build() {
+			_treeEdges = new VecInt(_graph.getNumberOfVertices() - 1);
+			_vertex2Label = new VecInt(_graph.getNumberOfVertices(), -1);
+			_vertex2Label.set(0,0);
+			_label2Vertex = new VecInt(_graph.getNumberOfVertices(), 0);
+			_parent = new VecInt(_graph.getNumberOfVertices(), 0);
+			VecInt queue = new VecInt(_graph.getNumberOfVertices());
+			queue.pushBack(0);
+			int currentNodeIdx = 0;
+			int currentLabel = 1;
+			while (currentNodeIdx < _graph.getNumberOfVertices()) {
+				//queue.dump();
+				//System.out.println(currentNodeIdx);
+				int iV = queue.get(currentNodeIdx);
+				if (_vertexNeighbors[iV] != null) {
+					for (int i = 0; i < _vertexNeighbors[iV].size(); i++) {
+						int neighbor = _vertexNeighbors[iV].get(i);
+						if (_vertex2Label.get(neighbor) == -1) {
+							_vertex2Label.set(neighbor, currentLabel);
+							_label2Vertex.set(currentLabel, neighbor);
+							_parent.set(currentLabel, _vertex2Label.get(iV));
+							currentLabel++;
+							int iE = _graph.getEdge(iV, neighbor);
+							_treeEdges.pushBack(iE);
+							queue.pushBack(neighbor);
+						}
+					}
+				}
+				currentNodeIdx++;
+			}
+/*			_vertex2Label.dump();
+			_label2Vertex.dump();
+			_treeEdges.dump();
+			_parent.dump();
+			System.out.println("*************");
+*/		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		TreeMatsui t;
+		int n = 5;
+		System.out.println("Complete Graphs");
+		t = new TreeMatsui(new EdgeRelabelGraph(Graph.buildCompleteGraph(n)));
+		//t = new TreeMatsui(new EdgeRelabelGraph(Graph.buildCycleGraph(n)));
+		//t = new TreeMatsui(new EdgeRelabelGraph(Graph.buildCompleteBipartite(3,3)));
+		//t.dump();
+		//t.vertexDistances().dump();
+		//t.vertexDistances().fullDump();
+		//StringBuffer s = new StringBuffer();
+		//int[] hist = t.cycleHistogram();
+		//System.out.println(hist.length);
+//		for (int i = 0; i < hist.length; i++) {
+//			if (hist[i] != 0) {
+//				s.append((s.length() > 0 ? "," : "") + i + "," + hist[i]);
+//			}			
+//		}
+//		System.out.println(s);
+		System.out.println(t.cycleHistogramDigest());
+	}
+
+		
+/*
 	public static void main(String[] args) throws Exception {
 		TreeMatsui t;
 		int n = 9; //9
@@ -168,7 +467,7 @@ public class TreeMatsui {
 			}
 		}
 	}
-
+*/
 /*
 	public static void main(String[] args) throws Exception {
 		Graph g = new Graph(5);
